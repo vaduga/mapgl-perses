@@ -52,3 +52,41 @@
   cursor: pointer;
   font-size: 20px;
 }
+
+/* System colors follow the Perses host's inherited light/dark color-scheme. */
+.mapgl-perses-controls {
+  --theme-background-primary: Canvas;
+  --theme-background-secondary: ButtonFace;
+  --theme-text-primary: CanvasText;
+  --theme-background-contrast: CanvasText;
+  --theme-border-weak: color-mix(in srgb, CanvasText 20%, Canvas);
+  --theme-accent: #4da6ff;
+  --button-background: Canvas;
+  --button-icon-idle: CanvasText;
+  --button-icon-hover: CanvasText;
+  --button-inner-stroke: 1px solid var(--theme-border-weak);
+  --menu-background: Canvas;
+  --menu-text: CanvasText;
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  max-height: calc(100% - 24px);
+  z-index: 2;
+  pointer-events: none;
+  font: 13px/1.5 sans-serif;
+}
+.mapgl-perses-controls .mapgl-perses-switcher.layer-switcher {
+  position: relative;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: flex-start;
+  width: fit-content;
+  max-width: 100%;
+  max-height: inherit;
+}
+.mapgl-perses-controls .bindings {
+  max-height: inherit;
+  min-width: 100px;
+}

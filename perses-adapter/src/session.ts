@@ -4,14 +4,14 @@ import {
   resolveGraphInteraction,
   resolveGraphPanelLayout,
 } from "@mapgl/panel-core/graph/frame";
-import { createVisibility } from "@mapgl/panel-core/store";
-import { colTypes, type ViewState } from "@mapgl/panel-core/types";
+import { type ViewState } from "@mapgl/panel-core/types";
 import type {
   GraphLayoutRequestInput,
   GraphLayoutWorkerResult,
 } from "@mapgl/panel-core/graph/utils/layout-worker-client";
 import { JsonGraphBindings, type GraphBindings } from "./input";
 import { createGraphInput } from "./visuals";
+import { PersesVisibility } from "./visibility";
 
 export interface LayoutClient {
   requestLayout(
@@ -44,13 +44,10 @@ export class PersesGraphSession {
           },
         ),
       prepareCommit: (state) => ({
-        visibility: createVisibility({
-          graph: state.graph.state.graph,
-          groupCount: state.visual.state.groups.length,
-          isLogic: true,
-          isRouted: true,
-          dataLayers: [{ name: "Mapgl", type: colTypes.Markers }],
-        }),
+        visibility: new PersesVisibility(
+          state.graph.state.graph,
+          state.visual.state.groups.length,
+        ),
       }),
     });
   }

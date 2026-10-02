@@ -244,3 +244,155 @@ describe("Perses neighborhood focus through public core layers", () => {
     }
   });
 });
+
+function toggle(session: PersesGraphSession, label: string, visible: boolean) {
+  const layer = session.controller.scene.visibility
+    .getLayerTree()
+    .find((layer) => layer.label === label)!;
+  expect(layer).toBeDefined();
+  session.controller.scene.setVisibility(layer, visible, "group", []);
+}
+function displayLayers(session: PersesGraphSession) {
+  const layers = createGraphLayers(
+    session.controller,
+    session.controller.scene.revision,
+  );
+  return {
+    nodes: layers.find((layer) => (layer.props.data as any)?.points)!,
+    labels: layers.find((layer) => layer.id.includes("-view-label-text"))!,
+    edges: layers.filter((layer) => layer.id.startsWith("edges")),
+  };
+}
+
+describe("Perses core LayerSwitcher visibility integration", () => {
+  it("exposes only three controls, independently toggles real layers and preserves focused layout/viewport", async () => {
+    const layout = layoutClient();
+    const session = new PersesGraphSession(layout.client);
+    try {
+      await session.update(rows, options);
+      expect(
+        session.controller.scene.visibility
+          .getLayerTree()
+          .map((layer) => [layer.label, layer.visible]),
+      ).toEqual([
+        ["Nodes", true],
+        ["Labels", true],
+        ["Edges", true],
+      ]);
+      select(session, "api");
+      session.viewport({ ...initialViewport, zoom: 1, target: [30, 50, 0] });
+      const viewport = session.controller.stores.viewStore.viewState;
+      const baseline = session.controller.state;
+      const positions = session.controller.scene.render.positions;
+      const colors = session.controller.scene.render.colors.slice();
+      const requests = layout.requests();
+      toggle(session, "Nodes", false);
+      expect(displayLayers(session).nodes.props.visible).toBe(false);
+      expect(displayLayers(session).labels.props.visible).toBe(true);
+      expect(
+        displayLayers(session).edges.every((layer) => layer.props.visible),
+      ).toBe(true);
+      toggle(session, "Labels", false);
+      expect(displayLayers(session).labels.props.visible).toBe(false);
+      toggle(session, "Edges", false);
+      const edges = displayLayers(session).edges;
+      expect(edges.some((layer) => layer.id.startsWith("edges-arrow-"))).toBe(
+        true,
+      );
+      expect(edges.some((layer) => layer.id.startsWith("edges-view"))).toBe(
+        true,
+      );
+      expect(edges.every((layer) => layer.props.visible === false)).toBe(true);
+      for (const label of ["Nodes", "Labels", "Edges"])
+        toggle(session, label, true);
+      const restored = displayLayers(session);
+      expect(
+        [restored.nodes, restored.labels, ...restored.edges].every(
+          (layer) => layer.props.visible,
+        ),
+      ).toBe(true);
+      expect(nodeAlphas(createGraphLayers(session.controller)).worker).toBe(46);
+      expect(connected(session)).toEqual(["0", "api", "database"]);
+      expect(session.controller.state).toBe(baseline);
+      expect(session.controller.scene.render.positions).toBe(positions);
+      expect(session.controller.scene.render.colors).toEqual(colors);
+      expect(session.controller.stores.viewStore.viewState).toEqual(viewport);
+      expect(layout.requests()).toBe(requests);
+    } finally {
+      session.dispose();
+    }
+  });
+
+  it("preserves choices on data/tree replacement, errors, empty responses and recovery", async () => {
+    const session = new PersesGraphSession(layoutClient().client);
+    try {
+      await session.update(rows, options);
+      toggle(session, "Labels", false);
+      toggle(session, "Edges", false);
+      const original = session.controller.scene.visibility;
+      await session.update(
+        rows.concat([{ id: "new", target: null, label: "New" }]),
+        options,
+      );
+      expect(session.controller.scene.visibility).not.toBe(original);
+      expect(displayLayers(session).nodes.props.visible).toBe(true);
+      expect(displayLayers(session).labels.props.visible).toBe(false);
+      expect(
+        displayLayers(session).edges.every(
+          (layer) => layer.props.visible === false,
+        ),
+      ).toBe(true);
+      await session.update([{ id: "bad", target: [] }], options);
+      expect(session.error).toBeDefined();
+      await session.update([], options);
+      expect(createGraphLayers(session.controller)).toEqual([]);
+      await session.update(rows, options);
+      expect(
+        session.controller.scene.visibility
+          .getLayerTree()
+          .map((layer) => layer.visible),
+      ).toEqual([true, false, false]);
+      toggle(session, "Labels", true);
+      expect(displayLayers(session).labels.props.visible).toBe(true);
+    } finally {
+      session.dispose();
+    }
+  });
+
+  it("retains visibility on layout failure and keeps mounted panels independent", async () => {
+    const layout = layoutClient();
+    let fail = false;
+    const one = new PersesGraphSession({
+      requestLayout: (input) =>
+        fail
+          ? Promise.reject(new Error("layout unavailable"))
+          : layout.client.requestLayout(input),
+      dispose: () => layout.client.dispose(),
+    });
+    const two = new PersesGraphSession(layoutClient().client);
+    try {
+      await Promise.all([one.update(rows, options), two.update(rows, options)]);
+      toggle(one, "Nodes", false);
+      toggle(one, "Edges", false);
+      fail = true;
+      await one.update(
+        rows.concat([{ id: "new", target: null, label: "New" }]),
+        options,
+      );
+      expect(one.error).toBe("layout unavailable");
+      expect(displayLayers(one).nodes.props.visible).toBe(false);
+      expect(
+        displayLayers(one).edges.every(
+          (layer) => layer.props.visible === false,
+        ),
+      ).toBe(true);
+      expect(displayLayers(two).nodes.props.visible).toBe(true);
+      expect(
+        displayLayers(two).edges.every((layer) => layer.props.visible),
+      ).toBe(true);
+    } finally {
+      one.dispose();
+      two.dispose();
+    }
+  });
+});

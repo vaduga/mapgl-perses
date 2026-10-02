@@ -12,10 +12,15 @@ import {
 } from "@mapgl/panel-core/render";
 import { getEdgesGeometry } from "@mapgl/panel-core/graph/utils";
 import { Graph } from "@mapgl/panel-core/graph/main";
+import { isVisible } from "@mapgl/panel-core/deckLayers/utils";
+import { colTypes } from "@mapgl/panel-core/types";
 import type { PanelController } from "@mapgl/panel-core/runtime";
 
 /** Only composes the public core factories; no graph geometry is reconstructed here. */
-export function createGraphLayers(controller: PanelController): Layer[] {
+export function createGraphLayers(
+  controller: PanelController,
+  visibilityRevision = 0,
+): Layer[] {
   const state = controller.state;
   if (!state?.snapshot.nodes.length) return [];
   const render = controller.scene.render;
@@ -48,10 +53,19 @@ export function createGraphLayers(controller: PanelController): Layer[] {
     visible: true,
     layoutGeometry: { ...render, edgeOffsetStrategies: [] },
     time: state.version,
-    visRefresh: state.version,
+    visRefresh: visibilityRevision,
   };
   const nodes = collections.map((biCol) =>
-    NodesGeojsonLayer({ ...props, biCol, pointTypeOverride: "circle" }),
+    NodesGeojsonLayer({
+      ...props,
+      biCol,
+      pointTypeOverride: "circle",
+      visible: isVisible(visibility, {
+        index: null,
+        name: colTypes.Circle,
+        group: colTypes.Circle,
+      }),
+    }),
   );
   const labels = collections.map((biCol) =>
     MainLabelTextLayer({ ...props, biCol, pickable: false }),
@@ -74,6 +88,11 @@ export function createGraphLayers(controller: PanelController): Layer[] {
     ([srcGraphId, features]) => {
       const edgeProps = {
         ...props,
+        visible: isVisible(visibility, {
+          index: null,
+          name: colTypes.Edges,
+          group: colTypes.Edges,
+        }),
         srcGraphId,
         linesCollection: { type: "FeatureCollection", features },
         edgeIndex: render.edgeIndex,

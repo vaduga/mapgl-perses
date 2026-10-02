@@ -23,5 +23,45 @@
     "id": "isolated",
     "target": null,
     "label": "Isolated node"
+  },
+  {
+    "id": "gateway",
+    "target": "api",
+    "label": "Gateway"
+  },
+  {
+    "id": "gateway",
+    "target": "cache",
+    "label": "Gateway"
+  },
+  {
+    "id": "api",
+    "target": "queue",
+    "label": "API"
+  },
+  {
+    "id": "cache",
+    "target": "database",
+    "label": "Cache"
+  },
+  {
+    "id": "queue",
+    "target": "worker",
+    "label": "Queue"
+  },
+  {
+    "id": "worker",
+    "target": "metrics",
+    "label": "Worker"
+  },
+  {
+    "id": "scheduler",
+    "target": "queue",
+    "label": "Scheduler"
+  },
+  {
+    "id": "metrics",
+    "target": "gateway",
+    "label": "Metrics"
   }
 ]

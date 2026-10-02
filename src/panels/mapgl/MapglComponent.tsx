@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import DeckGL from "@deck.gl/react";
+import LayerSwitcher from "@mapgl/panel-core/components/Menu/LayerSwitcher";
 import {
   OrbitView,
   type PickingInfo,
@@ -84,7 +85,7 @@ export function MapglComponent({
     }
   }, [session, state, width, height]);
   const layers = useMemo(
-    () => (session ? createGraphLayers(session.controller) : []),
+    () => (session ? createGraphLayers(session.controller, revision) : []),
     [session, state?.version, revision],
   );
   const selected = session?.controller.stores.pointStore.getSelectedNode;
@@ -129,6 +130,31 @@ export function MapglComponent({
         onClick={(info: PickingInfo) => session?.pick(info)}
         getCursor={({ isHovering }) => (isHovering ? "pointer" : "grab")}
       />
+      {session && (
+        <div
+          className="mapgl-perses-controls"
+          onPointerDown={(event) => event.stopPropagation()}
+          onWheel={(event) => event.stopPropagation()}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <LayerSwitcher
+            label="Graph display"
+            className="mapgl-perses-switcher"
+            bindings={{
+              visibility: session.controller.scene.visibility,
+              readComments: () => [],
+              setVisibility: (layer, visible, style) =>
+                session.controller.scene.setVisibility(
+                  layer,
+                  visible,
+                  style,
+                  [],
+                ),
+            }}
+            setVisRefresh={() => redraw((value) => value + 1)}
+          />
+        </div>
+      )}
       {status && (
         <div
           className="mapgl-perses-status"
