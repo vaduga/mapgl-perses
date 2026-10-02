@@ -1,0 +1,27 @@
+[
+  {
+    "id": "browser",
+    "target": "api",
+    "label": "Browser"
+  },
+  {
+    "id": "api",
+    "target": "database",
+    "label": "API"
+  },
+  {
+    "id": "database",
+    "target": null,
+    "label": "Database"
+  },
+  {
+    "id": "worker",
+    "target": "database",
+    "label": "Worker"
+  },
+  {
+    "id": "isolated",
+    "target": null,
+    "label": "Isolated node"
+  }
+]

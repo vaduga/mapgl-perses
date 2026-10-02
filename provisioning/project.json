@@ -1,0 +1,11 @@
+{
+  "kind": "Project",
+  "metadata": {
+    "name": "mapgl"
+  },
+  "spec": {
+    "display": {
+      "name": "Mapgl development"
+    }
+  }
+}

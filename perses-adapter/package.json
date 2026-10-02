@@ -1,0 +1,16 @@
+{
+  "name": "@mapgl/perses-adapter",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "GPL-3.0-only",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "peerDependencies": {
+    "@mapgl/panel-core": "2.10.5",
+    "react": "^18.2.0",
+    "@deck.gl/core": "^9.4.0",
+    "@deck.gl/react": "^9.4.0"
+  }
+}

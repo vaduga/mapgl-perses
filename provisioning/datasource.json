@@ -1,0 +1,26 @@
+{
+  "kind": "GlobalDatasource",
+  "metadata": {
+    "name": "mapgl-json"
+  },
+  "spec": {
+    "default": true,
+    "plugin": {
+      "kind": "JsonDatasource",
+      "spec": {
+        "proxy": {
+          "kind": "HTTPProxy",
+          "spec": {
+            "url": "http://fixtures",
+            "allowedEndpoints": [
+              {
+                "endpointPattern": "/graph.json",
+                "method": "GET"
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

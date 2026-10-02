@@ -1,0 +1,9 @@
+database:
+  file:
+    folder: /perses/data
+    extension: json
+plugin:
+  path: /perses/plugins
+  archive_paths:
+    - /etc/perses/plugins-archive
+  enable_dev: true

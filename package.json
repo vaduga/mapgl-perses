@@ -1,0 +1,59 @@
+{
+  "name": "@mapgl/perses-panel",
+  "version": "0.1.0",
+  "private": true,
+  "license": "GPL-3.0-only",
+  "scripts": {
+    "dev": "rsbuild dev",
+    "build": "rsbuild build",
+    "typecheck": "tsc --noEmit",
+    "dev:docker": "docker compose up --build",
+    "dev:stop": "docker compose down",
+    "test": "vitest run",
+    "check:boundary": "node scripts/check-source-boundary.mjs",
+    "preview": "rsbuild preview"
+  },
+  "devDependencies": {
+    "@module-federation/rsbuild-plugin": "0.11.2",
+    "@rsbuild/core": "1.2.19",
+    "@rsbuild/plugin-react": "1.1.1",
+    "@types/node": "22.15.30",
+    "@types/react": "18.3.23",
+    "@types/react-dom": "18.3.7",
+    "typescript": "5.9.3",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "vitest": "3.2.4"
+  },
+  "peerDependencies": {
+    "@perses-dev/plugin-system": "0.55.0-beta.15",
+    "@perses-dev/spec": "0.3.0-beta.10",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "perses": {
+    "metadata": {
+      "name": "Mapgl",
+      "registry": "mapgl"
+    },
+    "schemasPath": "schemas",
+    "plugins": [
+      {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Mapgl"
+          },
+          "name": "Mapgl"
+        }
+      }
+    ]
+  },
+  "workspaces": [
+    "perses-adapter"
+  ],
+  "dependencies": {
+    "@mapgl/panel-core": "file:./panel-core",
+    "@mapgl/perses-adapter": "file:./perses-adapter"
+  }
+}

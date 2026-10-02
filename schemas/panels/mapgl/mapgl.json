@@ -1,0 +1,8 @@
+{
+  "kind": "Mapgl",
+  "spec": {
+    "nodeIdField": "id",
+    "targetField": "target",
+    "labelField": "label"
+  }
+}

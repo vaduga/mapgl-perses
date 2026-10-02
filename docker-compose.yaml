@@ -1,0 +1,35 @@
+name: mapgl-perses
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      additional_contexts:
+        mapgl: ../mapgl
+    environment:
+      MAPGL_PERSES_BUILT: ${MAPGL_PERSES_BUILT:-false}
+    ports:
+      - "127.0.0.1:8090:8080"
+      - "127.0.0.1:3001:3001"
+    volumes:
+      - .:/workspace/mapgl-perses
+      - dev-node-modules:/workspace/mapgl-perses/node_modules
+      - ../mapgl:/workspace/mapgl:ro
+      # npm cleans linked package dependencies; keep that write isolated from the checkout.
+      - type: volume
+        source: dev-core-node-modules
+        target: /workspace/mapgl/panel-core/node_modules
+        volume:
+          nocopy: true
+      - perses-data:/perses
+    depends_on:
+      - fixtures
+    init: true
+  fixtures:
+    image: nginx:1.28.0-alpine
+    volumes:
+      - ./fixtures:/usr/share/nginx/html:ro
+volumes:
+  dev-node-modules:
+  perses-data:
+  dev-core-node-modules:

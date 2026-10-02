@@ -1,0 +1,67 @@
+{
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "mapgl-demo",
+    "project": "mapgl"
+  },
+  "spec": {
+    "display": {
+      "name": "Mapgl JSON graph"
+    },
+    "duration": "1h",
+    "panels": {
+      "graph": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Mapgl"
+          },
+          "plugin": {
+            "kind": "Mapgl",
+            "spec": {
+              "nodeIdField": "id",
+              "targetField": "target",
+              "labelField": "label"
+            }
+          },
+          "queries": [
+            {
+              "kind": "JsonQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "JsonQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "JsonDatasource",
+                      "name": "mapgl-json"
+                    },
+                    "endpointUrl": "/graph.json",
+                    "method": "GET"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "layouts": [
+      {
+        "kind": "Grid",
+        "spec": {
+          "items": [
+            {
+              "x": 0,
+              "y": 0,
+              "width": 24,
+              "height": 12,
+              "content": {
+                "$ref": "#/spec/panels/graph"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
