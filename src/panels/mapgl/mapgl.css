@@ -36,21 +36,64 @@
   display: none;
 }
 .mapgl-perses-selection {
+  --button-icon-idle: #edf4ff;
+  --button-icon-hover: #ffffff;
+  --theme-accent: #4da6ff;
   top: 12px;
   right: 12px;
   display: grid;
-  gap: 3px;
-  padding-right: 36px;
+  gap: 6px;
+  box-sizing: border-box;
+  max-width: min(320px, calc(100% - 24px));
+  max-height: calc(100% - 24px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  overflow-wrap: anywhere;
+}
+.mapgl-perses-selection-heading,
+.mapgl-perses-selection-id,
+.mapgl-perses-relationship-counts,
+.mapgl-perses-relationship-count {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mapgl-perses-selection-heading {
+  justify-content: space-between;
+}
+.mapgl-perses-selection-id > span {
+  min-width: 0;
 }
 .mapgl-perses-selection button {
-  position: absolute;
-  top: 3px;
-  right: 5px;
+  font: inherit;
+  cursor: pointer;
+}
+.mapgl-perses-selection-clear,
+.mapgl-perses-neighbor,
+.mapgl-perses-relationship-count > button {
   background: transparent;
   border: 0;
+  padding: 2px;
   color: inherit;
-  cursor: pointer;
+}
+.mapgl-perses-selection .mapgl-perses-selection-clear {
   font-size: 20px;
+}
+.mapgl-perses-neighbor {
+  text-decoration: underline;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.mapgl-perses-selection button:focus-visible {
+  outline: 2px solid #4da6ff;
+  outline-offset: 2px;
+}
+.mapgl-perses-selection ul {
+  margin: 0;
+  padding-left: 20px;
+}
+.mapgl-perses-copy-status:empty {
+  display: none;
 }
 
 /* System colors follow the Perses host's inherited light/dark color-scheme. */

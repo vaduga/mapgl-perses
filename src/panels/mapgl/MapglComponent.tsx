@@ -13,9 +13,11 @@ import {
   createGraphLayers,
   fitGraph,
   initialViewport,
+  getSelectedNodeDetails,
 } from "@mapgl/perses-adapter";
 import type { MapglProps } from "./mapgl-types";
 import "./mapgl.css";
+import { NodeSelectionCard } from "./NodeSelectionCard";
 
 const views = [new OrbitView({ id: "3d-scene", controller: true })];
 export function MapglComponent({
@@ -88,13 +90,7 @@ export function MapglComponent({
     () => (session ? createGraphLayers(session.controller, revision) : []),
     [session, state?.version, revision],
   );
-  const selected = session?.controller.stores.pointStore.getSelectedNode;
-  const selectedRecord =
-    selected && state?.snapshot.nodes.find((node) => node.id === selected.id);
-  const selectedLabel =
-    selectedRecord &&
-    state?.visual.state.nodes.find((node) => node.key === selectedRecord.key)
-      ?.style.text;
+  const selected = session && getSelectedNodeDetails(session.controller);
   const status =
     session?.error ??
     (view?.pending
@@ -177,17 +173,12 @@ export function MapglComponent({
           ? `${state.snapshot.nodes.length} nodes · ${state.snapshot.relations.recordCount} edges`
           : ""}
       </div>
-      {selectedRecord && (
-        <div className="mapgl-perses-selection" role="status">
-          <strong>{selectedLabel || selectedRecord.id}</strong>
-          <span>Node ID: {selectedRecord.id}</span>
-          <button
-            onClick={() => session?.controller.select(undefined)}
-            aria-label="Clear node selection"
-          >
-            ×
-          </button>
-        </div>
+      {session && selected && (
+        <NodeSelectionCard
+          key={selected.key}
+          session={session}
+          selected={selected}
+        />
       )}
     </div>
   );
