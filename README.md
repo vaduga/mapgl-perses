@@ -1,6 +1,6 @@
 # Mapgl for Perses
 
-Public Perses panel shell with a local `@mapgl/perses-adapter`. The MVP displays one JSON query as an abstract node graph using the OSS Mapgl core: automatic left-to-right layout, directed edges, labels, pan/zoom and node ID/label selection.
+Public Perses panel shell with a local `@mapgl/perses-adapter`. The MVP displays one JSON query as an abstract node graph using the OSS Mapgl core: automatic left-to-right layout, directed edges, labels, pan/zoom, node ID/label selection and immediate-neighbor highlighting.
 
 ## Local source development
 
@@ -67,16 +67,22 @@ The adapter clones and freezes accepted rows, preserves original row indexes, an
 
 Successful empty responses clear the graph. Adapter/layout failures show an error while retaining previously committed data. Perses handles datasource loading and query errors. The viewport fits after a usable size and layout are available, preserves pan/zoom during same-topology refreshes and grid resize, and fits again when topology changes. Each mounted panel owns and disposes its controller, subscriptions and worker; obsolete layouts cannot commit.
 
+## Neighborhood highlighting
+
+Click a node to emphasize it, its immediate incoming/outgoing neighbors and their connecting edges/arrows. Other nodes, labels and edges dim to 18% opacity; dimmed nodes remain selectable. The selection card's clear button or a background click restores the full graph. Traversal stops after one hop; terminal and isolated nodes and numeric zero IDs are supported.
+
+Highlighting uses the existing core PointStore/GraphHighlighter and public layer dimming helper. Selection does not relayout the graph, change source revisions or reset pan/zoom. A successful refresh recomputes a surviving node's neighborhood and clears focus when the selected node disappears; failed adapter/layout updates retain the last committed graph and focus. Each panel keeps its own focus state, and baseline color buffers remain unchanged.
+
 Geographic maps, search, multiple graph layers, field overrides and Pro editing are outside this MVP.
 
 ## Verification (2026-10-02)
 
-34 input, viewport and core-backed lifecycle tests pass, along with TypeScript, the source-boundary check and the federation build. Tests cover normalization, zero IDs, repeated rows, terminal/isolated nodes, dangling targets, labels/provenance, errors/empty data, out-of-order refreshes, invalidation, disposal and independent panel sessions.
+38 input, viewport and core-backed lifecycle/focus tests pass, along with TypeScript, the source-boundary check and the federation build. Tests cover normalization, zero IDs, repeated rows, terminal/isolated nodes, dangling targets, labels/provenance, errors/empty data, out-of-order refreshes, invalidation, disposal and independent panel sessions. Focus tests exercise actual node/label/curve/arrow layer factories with the real layout client and MSAGL runner, plus one-hop traversal, selection switching/clearing, changed relationships, removed nodes, failed refreshes, buffer immutability and unchanged viewport/layout requests.
 
-The Docker dashboard renders five nodes and three directed edges from the JSON datasource. Browser checks verified labels, worker layout, picking/clear selection, pan/zoom, grid resize, viewport preservation across a changed-label refresh, malformed-target errors, empty-result clearing and saved mappings after reload. Blank and whitespace-only required mappings were rejected by the Perses API. The static federation bundle and its hashed worker/MSAGL assets also rendered successfully. Fresh storage provisioning and service restart were checked.
+The Docker dashboard renders five nodes and three directed edges from the JSON datasource. Browser checks verified labels, worker layout, picking/clear selection, pan/zoom, grid resize, viewport preservation across a changed-label refresh, malformed-target errors, empty-result clearing and saved mappings after reload. Blank and whitespace-only required mappings were rejected by the Perses API. The static federation bundle and its hashed worker/MSAGL assets also rendered successfully. Fresh storage provisioning and service restart were checked. Live-source and built-bundle checks also verified neighborhood dimming, picking a dimmed node, clear selection and retained focus/zoom after dashboard refresh. Docker was returned to live-source mode after verification.
 
 ## Shared planning
 
-`openspec -> ../mapgl-spec/openspec` attaches this repository to the shared OpenSpec store. The proposal, design, specs and completed tasks are in `add-perses-node-graph-mvp`; `openspec validate add-perses-node-graph-mvp --strict` validates the change.
+`openspec -> ../mapgl-spec/openspec` attaches this repository to the shared OpenSpec store. The proposal, design, specs and completed tasks are in `add-perses-node-graph-mvp`; `openspec validate add-perses-node-graph-mvp --strict` validates the change. Neighborhood highlighting is tracked in `add-perses-neighborhood-highlighting`, with its proposal, design, capability spec and completed tasks in the same store.
 
 Official references: [plugin creation](https://perses.dev/perses/docs/plugins/creation/), [JSON plugin release](https://github.com/perses/plugins/releases/tag/json/v0.1.0-beta.2), [Perses beta release](https://github.com/perses/perses/releases/tag/v0.55.0-beta.4).

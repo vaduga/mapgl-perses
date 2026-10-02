@@ -4,6 +4,7 @@ import {
   MainLabelTextLayer,
   EdgesGeojsonLayer,
   EdgeArrowLayer,
+  getDimmedGraphLayers,
 } from "@mapgl/panel-core/deckLayers";
 import {
   buildGraphBinaryCollections,
@@ -80,5 +81,13 @@ export function createGraphLayers(controller: PanelController): Layer[] {
       return [EdgesGeojsonLayer(edgeProps), EdgeArrowLayer(edgeProps)];
     },
   );
-  return composeRenderLayers({ nodes, edges, labels });
+  const layers = composeRenderLayers({ nodes, edges, labels });
+  const points = controller.stores.pointStore;
+  return points.getSelectedNode && points.getHasFocusHighlight
+    ? getDimmedGraphLayers(layers, {
+        connectedNodeIds: points.getFocusedConnectedNodeIds,
+        connectedEdgeIndexes: points.getFocusedConnectedEdgeIndexes,
+        isRouted: true,
+      })
+    : layers;
 }

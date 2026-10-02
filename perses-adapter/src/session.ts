@@ -64,7 +64,20 @@ export class PersesGraphSession {
     this.error = undefined;
     try {
       const source = this.bindings.bind(payload, options, queryCount);
-      await this.controller.update(createGraphInput(source, options));
+      const result = await this.controller.update(
+        createGraphInput(source, options),
+      );
+      const points = this.controller.stores.pointStore;
+      // Core retains semantic focus keys across commits; clear a removed node.
+      if (
+        result?.ok &&
+        !this.disposed &&
+        request === this.request &&
+        points.getHasFocusHighlight &&
+        !points.getSelectedNode
+      ) {
+        this.controller.select(undefined);
+      }
     } catch (error) {
       if (this.disposed || request !== this.request) return;
       this.error = error instanceof Error ? error.message : String(error);
