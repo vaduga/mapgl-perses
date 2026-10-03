@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import DeckGL from "@deck.gl/react";
-import LayerSwitcher from "@mapgl/panel-core/components/Menu/LayerSwitcher";
+import LayerSwitcher from "@vaduga/mapgl-core/components/Menu/LayerSwitcher";
 import {
   OrbitView,
   type PickingInfo,
   type ViewStateChangeParameters,
 } from "@deck.gl/core";
-import type { GraphViewport } from "@mapgl/perses-adapter";
+import type { GraphViewport } from "@vaduga/mapgl-perses-adapter";
 import {
   PersesGraphSession,
   createLayoutClient,
@@ -14,7 +14,7 @@ import {
   fitGraph,
   initialViewport,
   getSelectedNodeDetails,
-} from "@mapgl/perses-adapter";
+} from "@vaduga/mapgl-perses-adapter";
 import type { MapglProps } from "./mapgl-types";
 import "./mapgl.css";
 import { NodeSelectionCard } from "./NodeSelectionCard";

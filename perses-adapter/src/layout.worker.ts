@@ -1,1 +1,1 @@
-import "@mapgl/panel-core/workers/layout-worker";
+import "@vaduga/mapgl-core/workers/layout-worker";

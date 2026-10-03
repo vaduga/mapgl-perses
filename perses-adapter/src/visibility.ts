@@ -1,6 +1,6 @@
-import { VisLayers } from "@mapgl/panel-core/store";
-import { Graph } from "@mapgl/panel-core/graph/main";
-import { colTypes } from "@mapgl/panel-core/types";
+import { VisLayers } from "@vaduga/mapgl-core/store";
+import { Graph } from "@vaduga/mapgl-core/graph/main";
+import { colTypes } from "@vaduga/mapgl-core/types";
 
 const controls = [
   ["Nodes", colTypes.Circle],

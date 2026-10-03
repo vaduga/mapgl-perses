@@ -1,6 +1,6 @@
-import type { PanelController } from "@mapgl/panel-core/runtime";
-import type { Graph, Node } from "@mapgl/panel-core/graph/main";
-import { adjacentEdgeTooltipSectionContributor } from "@mapgl/panel-core/featureContracts";
+import type { PanelController } from "@vaduga/mapgl-core/runtime";
+import type { Graph, Node } from "@vaduga/mapgl-core/graph/main";
+import { adjacentEdgeTooltipSectionContributor } from "@vaduga/mapgl-core/featureContracts";
 
 export function getNodeDetails(
   controller: PanelController,

@@ -1,7 +1,10 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["DOM", "ES2022"],
+    "lib": [
+      "DOM",
+      "ES2022"
+    ],
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "jsx": "react-jsx",
@@ -10,27 +13,12 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "noEmit": true,
-    "paths": {
-      "@mapgl/panel-core": ["./panel-core/src/index.ts"],
-      "@mapgl/panel-core/featureContracts": [
-        "./panel-core/src/extension-points/featureContracts.ts"
-      ],
-      "@mapgl/panel-core/graph": ["./panel-core/src/graph/main.ts"],
-      "@mapgl/panel-core/graph/packed-relations": [
-        "./panel-core/src/graph/frame/packedRelationReaders.ts"
-      ],
-      "@mapgl/panel-core/*": ["./panel-core/src/*"],
-      "@mapgl/perses-adapter": ["./perses-adapter/src/index.ts"],
-      "react": ["./node_modules/@types/react"],
-      "react/*": ["./node_modules/@types/react/*"],
-      "@deck.gl/*": ["./node_modules/@deck.gl/*"],
-      "@luma.gl/*": ["./node_modules/@luma.gl/*"],
-      "@math.gl/*": ["./node_modules/@math.gl/*"],
-      "@msagl/*": ["./node_modules/@msagl/*"],
-      "mobx": ["./node_modules/mobx"]
-    },
     "noImplicitAny": false,
-    "useDefineForClassFields": false
+    "useDefineForClassFields": false,
+    "customConditions": [
+      "development"
+    ],
+    "preserveSymlinks": true
   },
   "include": [
     "src",

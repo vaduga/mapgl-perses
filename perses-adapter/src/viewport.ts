@@ -1,4 +1,4 @@
-import type { ViewState } from "@mapgl/panel-core/types";
+import type { ViewState } from "@vaduga/mapgl-core/types";
 export type GraphViewport = ViewState & { target: [number, number, number] };
 export const initialViewport: GraphViewport = {
   longitude: 0,

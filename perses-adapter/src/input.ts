@@ -1,4 +1,4 @@
-import type { GraphSource, ValueColumn } from "@mapgl/panel-core/data";
+import type { GraphSource, ValueColumn } from "@vaduga/mapgl-core/data";
 
 export interface GraphBindings {
   nodeIdField: string;

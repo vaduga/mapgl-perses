@@ -5,16 +5,16 @@ import {
   EdgesGeojsonLayer,
   EdgeArrowLayer,
   getDimmedGraphLayers,
-} from "@mapgl/panel-core/deckLayers";
+} from "@vaduga/mapgl-core/deckLayers";
 import {
   buildGraphBinaryCollections,
   composeRenderLayers,
-} from "@mapgl/panel-core/render";
-import { getEdgesGeometry } from "@mapgl/panel-core/graph/utils";
-import { Graph } from "@mapgl/panel-core/graph/main";
-import { isVisible } from "@mapgl/panel-core/deckLayers/utils";
-import { colTypes } from "@mapgl/panel-core/types";
-import type { PanelController } from "@mapgl/panel-core/runtime";
+} from "@vaduga/mapgl-core/render";
+import { getEdgesGeometry } from "@vaduga/mapgl-core/graph/utils";
+import { Graph } from "@vaduga/mapgl-core/graph/main";
+import { isVisible } from "@vaduga/mapgl-core/deckLayers/utils";
+import { colTypes } from "@vaduga/mapgl-core/types";
+import type { PanelController } from "@vaduga/mapgl-core/runtime";
 
 /** Only composes the public core factories; no graph geometry is reconstructed here. */
 export function createGraphLayers(

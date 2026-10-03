@@ -1,14 +1,14 @@
-import { PanelController } from "@mapgl/panel-core/runtime";
+import { PanelController } from "@vaduga/mapgl-core/runtime";
 import {
   createGraphFrameViewState,
   resolveGraphInteraction,
   resolveGraphPanelLayout,
-} from "@mapgl/panel-core/graph/frame";
-import { type ViewState } from "@mapgl/panel-core/types";
+} from "@vaduga/mapgl-core/graph/frame";
+import { type ViewState } from "@vaduga/mapgl-core/types";
 import type {
   GraphLayoutRequestInput,
   GraphLayoutWorkerResult,
-} from "@mapgl/panel-core/graph/utils/layout-worker-client";
+} from "@vaduga/mapgl-core/graph/utils/layout-worker-client";
 import { JsonGraphBindings, type GraphBindings } from "./input";
 import { createGraphInput } from "./visuals";
 import { PersesVisibility } from "./visibility";

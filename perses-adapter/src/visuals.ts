@@ -1,9 +1,9 @@
-import type { GraphSource } from "@mapgl/panel-core/data";
+import type { GraphSource } from "@vaduga/mapgl-core/data";
 import type {
   GraphPipelineInput,
   GraphStyleChannels,
   GraphVisualConfig,
-} from "@mapgl/panel-core/graph/frame";
+} from "@vaduga/mapgl-core/graph/frame";
 import type { GraphBindings } from "./input";
 
 export function createGraphInput(

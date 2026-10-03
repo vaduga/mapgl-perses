@@ -1,15 +1,15 @@
 import { useState } from "react";
 import copy from "copy-to-clipboard";
-import { DeckWidgetButton } from "@mapgl/panel-core/components/DeckWidgetButton";
+import { DeckWidgetButton } from "@vaduga/mapgl-core/components/DeckWidgetButton";
 import {
   TooltipEdgeSectionList,
   type TooltipEdgeDirection,
-} from "@mapgl/panel-core/components/Tooltips/tooltipEdgeSections";
+} from "@vaduga/mapgl-core/components/Tooltips/tooltipEdgeSections";
 import {
   getNodeDetails,
   getSelectedNodeDetails,
   type PersesGraphSession,
-} from "@mapgl/perses-adapter";
+} from "@vaduga/mapgl-perses-adapter";
 
 type Selection = NonNullable<ReturnType<typeof getSelectedNodeDetails>>;
 

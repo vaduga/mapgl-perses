@@ -1,7 +1,11 @@
 import { defineConfig } from "vitest/config";
-import { sourceAliases } from "./scripts/source-aliases";
+import { runtimeDependencies } from "./scripts/source-resolution.mjs";
 export default defineConfig({
-  resolve: { alias: sourceAliases },
+  resolve: {
+    conditions: ["development"],
+    preserveSymlinks: true,
+    dedupe: runtimeDependencies,
+  },
   test: {
     include: ["perses-adapter/src/**/*.test.ts"],
     environment: "node",

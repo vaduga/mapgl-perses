@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import type { Layer } from "@deck.gl/core";
-import { LayoutWorkerClient } from "@mapgl/panel-core/graph/utils/layout-worker-client";
-import { getLayoutResult } from "@mapgl/panel-core/graph/utils/layout-worker-runner";
+import { LayoutWorkerClient } from "@vaduga/mapgl-core/graph/utils/layout-worker-client";
+import { getLayoutResult } from "@vaduga/mapgl-core/graph/utils/layout-worker-runner";
 import { PersesGraphSession } from "./session";
 import { createGraphLayers } from "./layers";
 import { getSelectedNodeDetails, getNodeDetails } from "./selection";

@@ -1,7 +1,7 @@
 // Adapted from the Perses percli panel module template (Apache-2.0).
 import { pluginModuleFederation } from "@module-federation/rsbuild-plugin";
 import { defineConfig } from "@rsbuild/core";
-import { sourceAliases } from "./scripts/source-aliases";
+import { resolve } from "node:path";
 import { pluginReact } from "@rsbuild/plugin-react";
 
 const assetPrefix = "/plugins/Mapgl/";
@@ -23,8 +23,11 @@ export default defineConfig({
   },
   dev: { assetPrefix },
   source: {
-    alias: sourceAliases,
-    include: [/panel-core[\\/]src/],
+    include: [
+      /panel-core[\\/]src/,
+      /perses-adapter[\\/]src/,
+      /node_modules[\\/]@vaduga[\\/]mapgl-core[\\/]src/,
+    ],
     entry: { main: "./src/index-federation.ts" },
   },
   output: {
@@ -59,6 +62,9 @@ export default defineConfig({
   tools: {
     htmlPlugin: false,
     rspack: (config) => {
+      config.resolve ??= {};
+      config.resolve.conditionNames = ["development", "visgl:webgl-only", "..."];
+      config.resolve.modules = [resolve("node_modules"), "node_modules"];
       config.module ??= {};
       config.module.rules ??= [];
       config.module.rules.push({

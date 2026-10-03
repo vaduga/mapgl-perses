@@ -1,10 +1,12 @@
 # Mapgl for Perses
 
-Public Perses panel shell with a local `@mapgl/perses-adapter`. The MVP displays one JSON query as an abstract node graph using the OSS Mapgl core: automatic left-to-right layout, directed edges, labels, pan/zoom, node ID/label selection immediate-neighbor highlighting and runtime display controls.
+Public Perses panel shell with a local `@vaduga/mapgl-perses-adapter`. The MVP displays one JSON query as an abstract node graph using the OSS Mapgl core: automatic left-to-right layout, directed edges, labels, pan/zoom, node ID/label selection immediate-neighbor highlighting and runtime display controls.
 
 ## Local source development
 
-Keep `mapgl-perses`, `mapgl` and `mapgl-spec` as sibling checkouts. The repository `panel-core -> ../mapgl/panel-core` symlink supplies `@mapgl/panel-core` through a local file dependency. TypeScript, Rsbuild and Vitest resolve its source entry points; no core build, package archive or vendor sync is needed. Bundler aliases resolve shared runtime dependencies from this shell to keep React, MobX and deck.gl identities consistent across the symlink.
+Keep `mapgl-perses`, `mapgl` and `mapgl-spec` as sibling checkouts. The repository `panel-core -> ../mapgl/panel-core` symlink supplies `@vaduga/mapgl-core` through the `file:./panel-core` dependency. The local `@vaduga/mapgl-perses-adapter` is an npm workspace package. TypeScript, Rsbuild and Vitest select the packages’ `development` export condition and resolve their public entry points directly from `src/`, without package-path aliases or TypeScript `paths` mappings. No core build, package archive or vendor sync is needed.
+
+Rsbuild follows symlinks to the real checkout files so edits in both core and adapter trigger live rebuilds. It resolves dependencies from the shell’s `node_modules` first; Vitest deduplicates core dependencies and peers plus React DOM. This keeps one shared React, MobX, deck.gl and luma.gl runtime. TypeScript and Vitest preserve symlink paths for their own resolution. The source export condition is enabled for live development, tests and optimized shell builds; selecting sources does not disable production bundling optimizations. The private checkout is named `mapgl-extensions`; the Perses boundary guard rejects imports from it and from Grafana packages.
 
 ```sh
 npm ci
@@ -44,7 +46,7 @@ docker compose down
 
 Provisioning is idempotent and resets the demo dashboard to `provisioning/dashboard.json` on each dev service start. Use a separate dashboard for changes you want to retain.
 
-Verified versions: Perses `v0.55.0-beta.4`, bundled JSON module `0.1.0-beta.2`, plugin-system `0.55.0-beta.15`, spec `0.3.0-beta.10`, React `18.3.1`, Node `22.15.0` / npm `10.9.2` in Docker. JSON queries are a beta feature and are absent from stable Perses 0.54.
+Verified versions: Perses `v0.55.0-beta.4`, bundled JSON module `0.1.0-beta.2`, plugin-system `0.55.0-beta.15`, spec `0.3.0-beta.10`, React `18.3.1`, Node `22.22.2` / npm `12.2.0` in Docker. JSON queries are a beta feature and are absent from stable Perses 0.54.
 
 ## JSON graph contract
 
@@ -94,6 +96,20 @@ Geographic maps, search, multiple graph layers, field overrides and Pro editing 
 44 input, viewport and core-backed lifecycle/focus/visibility tests pass, along with TypeScript, the source-boundary check and the federation build. Tests cover normalization, zero IDs, repeated rows, terminal/isolated nodes, dangling targets, labels/provenance, errors/empty data, out-of-order refreshes, invalidation, disposal and independent panel sessions. Focus tests exercise actual node/label/curve/arrow layer factories with the real layout client and MSAGL runner, plus one-hop traversal, selection switching/clearing, changed relationships, removed nodes, failed refreshes, buffer immutability and unchanged viewport/layout requests. Visibility integration tests cover the real node/label/curve/arrow gates and restoration, retained choices through tree replacement/empty/errors, failed layout and independent panel instances.
 
 The Docker dashboard renders five nodes and three directed edges from the JSON datasource. Browser checks verified labels, worker layout, picking/clear selection, pan/zoom, grid resize, viewport preservation across a changed-label refresh, malformed-target errors, empty-result clearing and saved mappings after reload. Blank and whitespace-only required mappings were rejected by the Perses API. The static federation bundle and its hashed worker/MSAGL assets also rendered successfully. Fresh storage provisioning and service restart were checked. Live-source and built-bundle checks also verified neighborhood dimming, picking a dimmed node, clear selection and retained focus/zoom after dashboard refresh. LayerSwitcher checks in live-source and built modes verified independent Nodes/Labels controls, combined curve/arrow visibility, retained focus/zoom and open/closed refresh choices. Hidden-node picking, dark/light contrast and a narrow dashboard viewport were also checked. Docker was returned to live-source mode after verification. Selected-node relationship tests cover core counts, resolved labels, normalized zero IDs, navigation without layout/viewport changes, refresh/removal/error retention and repeated-row/self-relationship semantics. Live-browser checks verified both direction lists, neighbor navigation, expansion retention through refresh, keyboard activation, isolated-node/clear behavior and Copy ID feedback with a successful paste. Clipboard failure was not forced in the browser.
+
+## Core refactor verification (2026-10-03)
+
+Rebuilt against the refactored local core and replaced source/runtime aliases with conditional package exports. Moving luma.gl/deck.gl into core dependencies had created duplicate graphics runtimes and edge shader compilation errors. Rsbuild’s shell-first dependency lookup and Vitest’s runtime deduplication keep those dependencies shared without aliases. Three narrow public core exports expose `DeckWidgetButton`, `Menu/LayerSwitcher` and `Tooltips/tooltipEdgeSections` without importing the broader geographic UI barrel. Docker npm 10 repaired the lockfile's missing optional YAML peer entries, restoring clean image builds.
+
+The Docker build, TypeScript check, source-boundary check and all 44 tests pass; every federation manifest asset exists. Resolver checks point core and adapter imports to `src/`, and timestamp-only checks confirmed live rebuilds for both source checkouts. The built plugin was browser-tested with 10 nodes/11 relationships: curves and arrowheads, node selection/highlighting, incoming/outgoing lists and neighbor navigation, edge visibility restoration, pan/zoom and refresh retention worked without browser errors. Docker was returned to live-source mode. Grafana interaction parity remains the separate follow-up described above.
+
+## Dependency patches (2026-10-03)
+
+Build tooling is pinned to Rsbuild `1.3.21`, the module federation Rsbuild plugin `2.9.2`, and Vitest `4.1.11`. The shell declares ESM explicitly, and the test resolver helper uses an explicit `.mjs` entry. A `fast-uri: 3.1.8` override patches the Perses plugin system’s pinned URI dependency while retaining the current Perses/JSON version family. Docker pins Node `22.22.2` and npm `12.2.0`, matching the local installer’s npm version. npm 10 and npm 12 resolve optional YAML peers differently; using npm 12 in both environments prevents a local `npm install` from invalidating the Docker lockfile.
+
+For npm 12, `allowScripts` permits esbuild’s binary installer and denies the core-js funding banner and MapLibre’s development-only prepare script. MapLibre is outside this abstract-graph MVP. A global `.npmrc` script policy may produce a notice that the repository’s policy takes precedence; this does not block installation.
+
+The audit now reports no high or critical findings. Three moderate entries remain for one ECharts XSS advisory inherited through `@perses-dev/components` and `@perses-dev/plugin-system`. Mapgl renders with deck.gl rather than ECharts. Removing that dependency advisory requires a compatible Perses/ECharts upgrade; do not use `npm audit fix --force` to downgrade the JSON-capable Perses setup.
 
 ## Shared planning
 

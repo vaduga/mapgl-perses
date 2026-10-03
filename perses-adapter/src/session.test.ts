@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { getLayoutResult } from "@mapgl/panel-core/graph/utils/layout-worker-runner";
+import { getLayoutResult } from "@vaduga/mapgl-core/graph/utils/layout-worker-runner";
 import {
   createLayoutRequest,
   LayoutWorkerClient,
-} from "@mapgl/panel-core/graph/utils/layout-worker-client";
+} from "@vaduga/mapgl-core/graph/utils/layout-worker-client";
 type LayoutRequest = Parameters<typeof getLayoutResult>[0];
 import { PersesGraphSession, type LayoutClient } from "./session";
 import { initialViewport } from "./viewport";

@@ -2,12 +2,12 @@ import { readFileSync, realpathSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 const root = process.cwd();
 const pkg = JSON.parse(readFileSync("package.json", "utf8"));
-if (pkg.dependencies["@mapgl/panel-core"] !== "file:./panel-core")
+if (pkg.dependencies["@vaduga/mapgl-core"] !== "file:./panel-core")
   throw new Error("Core must remain a local checkout dependency");
 if (realpathSync("panel-core") !== realpathSync("../mapgl/panel-core"))
   throw new Error("Core symlink must point to the OSS checkout");
 if (
-  /@grafana\/|mapgl-internal|file:vendor/.test(
+  /@grafana\/|mapgl-extensions|file:vendor/.test(
     readFileSync("package-lock.json", "utf8"),
   )
 )
@@ -18,7 +18,7 @@ function check(dir) {
     if (entry.isDirectory()) check(path);
     else if (
       /\.[cm]?[jt]sx?$/.test(path) &&
-      /(?:from\s*|import\s*\()['"](?:@grafana\/|@mapgl\/grafana-adapter|.*mapgl-internal)/.test(
+      /(?:from\s*|import\s*\()['"](?:@grafana\/|@(?:mapgl\/grafana-adapter|vaduga\/mapgl-grafana-adapter)|.*mapgl-extensions)/.test(
         readFileSync(path, "utf8"),
       )
     )
