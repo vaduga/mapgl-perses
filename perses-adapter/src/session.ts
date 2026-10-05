@@ -1,7 +1,6 @@
 import { PanelController } from "@vaduga/mapgl-core/runtime";
 import {
   createGraphFrameViewState,
-  resolveGraphInteraction,
   resolveGraphPanelLayout,
 } from "@vaduga/mapgl-core/graph/frame";
 import { type ViewState } from "@vaduga/mapgl-core/types";
@@ -11,6 +10,7 @@ import type {
 } from "@vaduga/mapgl-core/graph/utils/layout-worker-client";
 import { JsonGraphBindings, type GraphBindings } from "./input";
 import { createGraphInput } from "./visuals";
+import { createGraphRenderer } from "./layers";
 import { PersesVisibility } from "./visibility";
 
 export interface LayoutClient {
@@ -22,6 +22,7 @@ export interface LayoutClient {
 /** One mounted panel owns this session and its core controller/worker. */
 export class PersesGraphSession {
   readonly controller: PanelController;
+  readonly renderer: ReturnType<typeof createGraphRenderer>;
   private readonly bindings = new JsonGraphBindings();
   private request = 0;
   private disposed = false;
@@ -50,6 +51,7 @@ export class PersesGraphSession {
         ),
       }),
     });
+    this.renderer = createGraphRenderer(this.controller);
   }
   async update(
     payload: unknown,
@@ -91,21 +93,14 @@ export class PersesGraphSession {
   pick(info: unknown): void {
     const state = this.controller.state;
     if (!state || this.disposed) return;
-    const interaction = resolveGraphInteraction(
-      {
-        snapshot: state.snapshot,
-        graph: this.controller.scene.readGraph(),
-        features: this.controller.scene.render.features,
-      },
-      info,
-    );
-    if (interaction?.kind === "node")
-      this.controller.select({
-        id: interaction.record.id,
-        namespaceId: interaction.record.namespaceId,
-      });
+    const key = this.renderer.resolvePick(info);
+    if (key) this.controller.selectElement(key);
     else if (!(info as { picked?: boolean })?.picked)
       this.controller.select(undefined);
+  }
+  hover(info: unknown): void {
+    if (!this.disposed)
+      this.controller.stores.pointStore.focus(this.renderer.resolvePick(info));
   }
   viewport(value: ViewState): void {
     this.controller.setViewport(value);
@@ -114,6 +109,7 @@ export class PersesGraphSession {
     if (this.disposed) return;
     this.disposed = true;
     this.request++;
+    this.renderer.dispose();
     this.controller.dispose();
     this.layout.dispose();
   }

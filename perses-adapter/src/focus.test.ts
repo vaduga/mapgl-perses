@@ -3,9 +3,20 @@ import type { Layer } from "@deck.gl/core";
 import { LayoutWorkerClient } from "@vaduga/mapgl-core/graph/utils/layout-worker-client";
 import { getLayoutResult } from "@vaduga/mapgl-core/graph/utils/layout-worker-runner";
 import { PersesGraphSession } from "./session";
-import { createGraphLayers } from "./layers";
+import { createGraphRenderer } from "./layers";
+function createGraphLayers(
+  controller: import("@vaduga/mapgl-core/runtime").PanelController,
+  _revision = 0,
+) {
+  const renderer = createGraphRenderer(controller);
+  void renderer.build();
+  const layers = [...renderer.layers];
+  renderer.dispose();
+  return layers;
+}
 import { getSelectedNodeDetails, getNodeDetails } from "./selection";
 import { initialViewport } from "./viewport";
+import demoRows from "../../fixtures/graph.json";
 
 const options = {
   nodeIdField: "id",
@@ -79,6 +90,105 @@ function labelAlphas(layers: Layer[]) {
 }
 
 describe("Perses neighborhood focus through public core layers", () => {
+  it("renders the demo multi-hop path as one logical edge and focuses every hop from a curve or arc pick", async () => {
+    const session = new PersesGraphSession(layoutClient().client);
+    try {
+      await session.update(demoRows, options);
+      await session.renderer.build();
+      const snapshot = session.controller.state!.snapshot;
+      expect(snapshot.nodes).toHaveLength(10);
+      expect(snapshot.relations.recordCount).toBe(12);
+      const recordRef =
+        snapshot.relations.getRecordRefsById("gateway-metrics")![0];
+      const unitRef = snapshot.relations.getRecordUnitStart(recordRef);
+      expect(
+        snapshot.relations.materializeUnitRoute(
+          unitRef,
+          (ref) => snapshot.nodes[ref].id,
+        ),
+      ).toEqual(["gateway", "api", "queue", "worker", "metrics"]);
+      const frame = session.renderer.frame!;
+      const index = frame.input.render.edgeIndex;
+      const hops = Array.from(index.recordEdges(recordRef));
+      expect(hops).toHaveLength(4);
+      const curve = session.renderer.layers.find((layer) =>
+        layer.id.startsWith("edges-view"),
+      )!;
+      const data = curve.props.data as any;
+      const mappings = hops.map(
+        (edge) => frame.prepared.geometry.mappings[index.getEdgeRef(edge)!]!,
+      );
+      const lineIds = mappings.map((mapping) => mapping.lineId!);
+      const frameBeforeHover = session.renderer.frame;
+      (curve as any).state = {};
+      for (const featureIndex of lineIds) {
+        const segmentIndex = (data.segmentFeatureIndexes as Int32Array).indexOf(
+          featureIndex,
+        );
+        expect(segmentIndex).toBeGreaterThanOrEqual(0);
+        const pick = (curve as any).getPickingInfo({
+          info: { picked: true, index: segmentIndex },
+        });
+        expect(pick.object).toBe(data.features[featureIndex]);
+        session.hover(pick);
+        const focusedCurve = session.renderer.layers.find((layer) =>
+          layer.id.startsWith("edges-view"),
+        )!;
+        for (const hopIndex of lineIds)
+          expect(
+            (focusedCurve.props as any).getHighlightDepth({
+              featureIndex: hopIndex,
+            }),
+          ).toBe(0);
+        expect(connected(session)).toEqual(["gateway", "metrics"]);
+        expect(session.renderer.frame).toBe(frameBeforeHover);
+      }
+      session.hover({ picked: false });
+      expect(session.controller.stores.pointStore.getHasFocusHighlight).toBe(
+        false,
+      );
+      session.pick({
+        picked: true,
+        object: data.features[lineIds[3]],
+        index: lineIds[3],
+      });
+      expect(session.controller.stores.pointStore.getSelectedNode?.id).toBe(
+        "gateway",
+      );
+      expect(connected(session)).toEqual(["gateway", "metrics"]);
+      const focusedCurve = session.renderer.layers.find((layer) =>
+        layer.id.startsWith("edges-view"),
+      )!;
+      for (const featureIndex of lineIds)
+        expect(
+          (focusedCurve.props as any).getHighlightDepth({ featureIndex }),
+        ).toBe(0);
+      expect(
+        session.controller.stores.pointStore.getFocusedConnectedEdgeIndexes
+          .map((mapping) => mapping.lineId)
+          .sort(),
+      ).toEqual([...lineIds].sort());
+      toggle(session, "Routed", false);
+      await session.renderer.build();
+      const arcLayer = session.renderer.layers.find((layer) =>
+        layer.id.startsWith("edges-arc-base"),
+      )!;
+      const arc = (arcLayer.props.data as any[])[mappings[0].arcId!];
+      session.pick({ picked: true, object: arc });
+      expect(session.controller.stores.pointStore.getSelectedNode?.id).toBe(
+        "gateway",
+      );
+      expect(connected(session)).toEqual(["gateway", "metrics"]);
+      expect(
+        (arcLayer.props.data as any[]).filter(
+          (arc) => arc.edgeId === "gateway-metrics",
+        ),
+      ).toHaveLength(1);
+    } finally {
+      session.dispose();
+    }
+  });
+
   it("emphasizes only one-hop incoming/outgoing nodes, labels, routed curves and arrows without changing baseline colors", async () => {
     const { client } = layoutClient();
     const session = new PersesGraphSession(client);
@@ -266,7 +376,94 @@ function displayLayers(session: PersesGraphSession) {
 }
 
 describe("Perses core LayerSwitcher visibility integration", () => {
-  it("exposes only three controls, independently toggles real layers and preserves focused layout/viewport", async () => {
+  it("switches routed curves/arrows and non-routed arcs without layout, loses no visibility choices or edge focus", async () => {
+    const layout = layoutClient();
+    const session = new PersesGraphSession(layout.client);
+    try {
+      await session.update(rows, options);
+      await session.renderer.build();
+      const routed = session.renderer.layers.find((layer) =>
+        layer.id.startsWith("edges-view"),
+      )!;
+      const feature = (routed.props.data as any).features.find(
+        (feature: any) => feature.edgeId,
+      );
+      session.pick({ picked: true, object: feature });
+      expect(connected(session)).toEqual(["0", "api"]);
+      expect(session.controller.stores.pointStore.focusedEdgeId).toBe(
+        feature.edgeId,
+      );
+      session.viewport({ ...initialViewport, zoom: 1, target: [30, 50, 0] });
+      const viewport = session.controller.stores.viewStore.viewState;
+      const prepared = session.renderer.frame!.prepared;
+      const state = session.controller.state;
+      const requests = layout.requests();
+      toggle(session, "Routed", false);
+      await session.renderer.build();
+      expect(session.renderer.frame!.input.presentation.isRouted).toBe(false);
+      expect(session.renderer.frame!.prepared.geometry).toEqual(
+        prepared.geometry,
+      );
+      expect(
+        session.renderer.layers.some((layer) =>
+          layer.id.startsWith("edges-view"),
+        ),
+      ).toBe(false);
+      const arcs = session.renderer.layers.filter((layer) =>
+        layer.id.startsWith("edges-arc"),
+      );
+      expect(arcs).toHaveLength(2);
+      const arc = arcs.find((layer) => layer.id.startsWith("edges-arc-base"))!;
+      const arcData = arc.props.data as any[];
+      session.pick({ picked: true, object: arcData[2] });
+      expect(connected(session)).toEqual(["database", "worker"]);
+      expect(session.controller.stores.pointStore.focusedEdgeId).toBe(
+        arcData[2].edgeId,
+      );
+      toggle(session, "Edges", false);
+      await session.renderer.build();
+      expect(
+        session.renderer.layers
+          .filter((layer) => layer.id.startsWith("edges-arc"))
+          .every((layer) => !layer.props.visible),
+      ).toBe(true);
+      await session.update(
+        rows.map((row) => ({ ...row, label: row.label + " updated" })),
+        options,
+      );
+      await session.renderer.build();
+      expect(session.renderer.frame!.input.presentation.isRouted).toBe(false);
+      expect(connected(session)).toEqual(["database", "worker"]);
+      toggle(session, "Routed", true);
+      toggle(session, "Edges", true);
+      await session.renderer.build();
+      const curve = session.renderer.layers.find((layer) =>
+        layer.id.startsWith("edges-view"),
+      )!;
+      expect(curve.props.visible).toBe(true);
+      const curveData = curve.props.data as any;
+      const depths = Array.from(
+        curveData.segmentFeatureIndexes as Int32Array,
+        (featureIndex) =>
+          (curve.props as any).getHighlightDepth({ featureIndex }),
+      );
+      expect(depths).toContain(0);
+      expect(depths).toContain(Number.MAX_SAFE_INTEGER);
+      expect(session.controller.stores.viewStore.viewState).toEqual(viewport);
+      expect(layout.requests()).toBe(requests);
+      expect(session.controller.state!.snapshot.topologySignature).toBe(
+        state!.snapshot.topologySignature,
+      );
+      session.pick({ picked: false });
+      expect(session.controller.stores.pointStore.getHasFocusHighlight).toBe(
+        false,
+      );
+    } finally {
+      session.dispose();
+    }
+  });
+
+  it("exposes display and route controls, independently toggles real layers and preserves focused layout/viewport", async () => {
     const layout = layoutClient();
     const session = new PersesGraphSession(layout.client);
     try {
@@ -279,6 +476,7 @@ describe("Perses core LayerSwitcher visibility integration", () => {
         ["Nodes", true],
         ["Labels", true],
         ["Edges", true],
+        ["Routed", true],
       ]);
       select(session, "api");
       session.viewport({ ...initialViewport, zoom: 1, target: [30, 50, 0] });
@@ -352,7 +550,7 @@ describe("Perses core LayerSwitcher visibility integration", () => {
         session.controller.scene.visibility
           .getLayerTree()
           .map((layer) => layer.visible),
-      ).toEqual([true, false, false]);
+      ).toEqual([true, false, false, true]);
       toggle(session, "Labels", true);
       expect(displayLayers(session).labels.props.visible).toBe(true);
     } finally {

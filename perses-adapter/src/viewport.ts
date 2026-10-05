@@ -1,3 +1,4 @@
+import { getFeatureBounds, fitCartesianBounds } from "@vaduga/mapgl-core/utils";
 import type { ViewState } from "@vaduga/mapgl-core/types";
 export type GraphViewport = ViewState & { target: [number, number, number] };
 export const initialViewport: GraphViewport = {
@@ -17,28 +18,19 @@ export function fitGraph(
   height: number,
 ): GraphViewport | undefined {
   if (!positions.length || width <= 100 || height <= 100) return undefined;
-  let minX = Infinity,
-    minY = Infinity,
-    maxX = -Infinity,
-    maxY = -Infinity;
-  for (let i = 0; i < positions.length; i += 2) {
-    minX = Math.min(minX, positions[i]);
-    maxX = Math.max(maxX, positions[i]);
-    minY = Math.min(minY, positions[i + 1]);
-    maxY = Math.max(maxY, positions[i + 1]);
-  }
-  if (![minX, minY, maxX, maxY].every(Number.isFinite)) return undefined;
+  const bounds = getFeatureBounds(
+    Array.from({ length: positions.length / 2 }, (_, id) => ({ id })),
+    positions,
+  );
+  if (!bounds) return undefined;
+  const fit = fitCartesianBounds(bounds, width, height, {
+    maxZoom: 2,
+    viewportMargin: 100,
+    extentMargin: [70, 90],
+  });
   return {
     ...initialViewport,
-    target: [(minX + maxX) / 2, (minY + maxY) / 2, 0],
-    zoom: Math.min(
-      2,
-      Math.log2(
-        Math.min(
-          (width - 100) / (maxX - minX + 70),
-          (height - 100) / (maxY - minY + 90),
-        ),
-      ),
-    ),
+    target: [fit.longitude, fit.latitude, 0],
+    zoom: fit.zoom,
   };
 }

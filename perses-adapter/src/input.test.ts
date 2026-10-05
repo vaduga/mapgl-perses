@@ -65,7 +65,7 @@ describe("Perses JSON boundary", () => {
       ).toThrow('field "id"');
     },
   );
-  it.each([["b", "c"], { id: "b" }, false, Infinity, "  "])(
+  it.each([[], ["b", {}], { id: "b" }, false, Infinity, "  "])(
     "rejects invalid target %j",
     (target) => {
       expect(() =>
@@ -73,6 +73,13 @@ describe("Perses JSON boundary", () => {
       ).toThrow('target field "target"');
     },
   );
+  it("accepts and freezes an ordered multi-hop path with a numeric zero ID", () => {
+    const rows = [{ id: 0, target: [0, "via", "destination"] }];
+    const source = new JsonGraphBindings().bind(rows, options, 1);
+    rows[0].target[1] = "changed";
+    expect(source.target?.get(0)).toEqual([0, "via", "destination"]);
+    expect(Object.isFrozen(source.target?.get(0))).toBe(true);
+  });
   it("reports a missing target mapping without dropping rows", () => {
     expect(() =>
       new JsonGraphBindings().bind([{ id: "a", other: null }], options, 1),

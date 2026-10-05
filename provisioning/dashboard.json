@@ -36,6 +36,7 @@
                       "name": "mapgl-json"
                     },
                     "endpointUrl": "/graph.json",
+                    "queryParams": { "fixture": "multi-hop" },
                     "method": "GET"
                   }
                 }

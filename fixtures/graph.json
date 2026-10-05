@@ -63,5 +63,10 @@
     "id": "metrics",
     "target": "gateway",
     "label": "Metrics"
+  },
+  {
+    "id": "gateway",
+    "target": ["gateway", "api", "queue", "worker", "metrics"],
+    "label": "Gateway"
   }
 ]

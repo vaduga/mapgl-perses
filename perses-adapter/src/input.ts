@@ -11,6 +11,9 @@ const own = (row: JsonRow, field: string) => Object.hasOwn(row, field);
 const validId = (value: unknown) =>
   (typeof value === "string" && value.trim().length > 0) ||
   (typeof value === "number" && Number.isFinite(value));
+const validTarget = (value: unknown) =>
+  validId(value) ||
+  (Array.isArray(value) && value.length >= 2 && value.every(validId));
 function freeze(value: unknown): void {
   if (value && typeof value === "object") {
     Object.values(value).forEach(freeze);
@@ -53,9 +56,9 @@ export class JsonGraphBindings {
           `Row ${index + 1}: field "${bindings.nodeIdField}" must be a nonempty string or finite number.`,
         );
       const target = row[bindings.targetField];
-      if (target != null && target !== "" && !validId(target))
+      if (target != null && target !== "" && !validTarget(target))
         throw new GraphInputError(
-          `Row ${index + 1}: target field "${bindings.targetField}" must be a scalar node ID or null.`,
+          `Row ${index + 1}: target field "${bindings.targetField}" must be a node ID, a path of node IDs, or null.`,
         );
       const label = bindings.labelField ? row[bindings.labelField] : undefined;
       if (label != null && typeof label !== "string")

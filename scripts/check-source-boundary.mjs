@@ -7,7 +7,7 @@ if (pkg.dependencies["@vaduga/mapgl-core"] !== "file:./panel-core")
 if (realpathSync("panel-core") !== realpathSync("../mapgl/panel-core"))
   throw new Error("Core symlink must point to the OSS checkout");
 if (
-  /@grafana\/|mapgl-extensions|file:vendor/.test(
+  /@grafana\/|mapgl-(?:extensions|pro|perses-pro)|file:vendor/.test(
     readFileSync("package-lock.json", "utf8"),
   )
 )
@@ -18,7 +18,7 @@ function check(dir) {
     if (entry.isDirectory()) check(path);
     else if (
       /\.[cm]?[jt]sx?$/.test(path) &&
-      /(?:from\s*|import\s*\()['"](?:@grafana\/|@(?:mapgl\/grafana-adapter|vaduga\/mapgl-grafana-adapter)|.*mapgl-extensions)/.test(
+      /(?:from\s*|import\s*\()['"](?:@grafana\/|@(?:mapgl\/grafana-adapter|vaduga\/mapgl-grafana-adapter)|.*mapgl-(?:extensions|pro|perses-pro))/.test(
         readFileSync(path, "utf8"),
       )
     )

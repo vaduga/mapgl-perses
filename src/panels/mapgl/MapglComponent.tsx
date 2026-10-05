@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useRenderFrame } from "@vaduga/mapgl-core/render/react";
+import { useDelayedHover } from "@vaduga/mapgl-core/render";
 import DeckGL from "@deck.gl/react";
 import LayerSwitcher from "@vaduga/mapgl-core/components/Menu/LayerSwitcher";
 import {
@@ -10,7 +12,6 @@ import type { GraphViewport } from "@vaduga/mapgl-perses-adapter";
 import {
   PersesGraphSession,
   createLayoutClient,
-  createGraphLayers,
   fitGraph,
   initialViewport,
   getSelectedNodeDetails,
@@ -28,7 +29,7 @@ export function MapglComponent({
 }: MapglProps) {
   const container = useRef<HTMLDivElement>(null);
   const [session, setSession] = useState<PersesGraphSession>();
-  const [revision, redraw] = useState(0);
+  const [, redraw] = useState(0);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [viewport, setViewport] = useState<GraphViewport>(initialViewport);
   const fitSignature = useRef<string>();
@@ -86,10 +87,8 @@ export function MapglComponent({
       session.controller.setViewport(next, "host");
     }
   }, [session, state, width, height]);
-  const layers = useMemo(
-    () => (session ? createGraphLayers(session.controller, revision) : []),
-    [session, state?.version, revision],
-  );
+  const { layers } = useRenderFrame(session?.renderer);
+  const onHover = useDelayedHover((info) => session?.hover(info));
   const selected = session && getSelectedNodeDetails(session.controller);
   const status =
     session?.error ??
@@ -124,6 +123,7 @@ export function MapglComponent({
           session?.viewport(next);
         }}
         onClick={(info: PickingInfo) => session?.pick(info)}
+        onHover={onHover}
         getCursor={({ isHovering }) => (isHovering ? "pointer" : "grab")}
       />
       {session && (
@@ -147,7 +147,6 @@ export function MapglComponent({
                   [],
                 ),
             }}
-            setVisRefresh={() => redraw((value) => value + 1)}
           />
         </div>
       )}

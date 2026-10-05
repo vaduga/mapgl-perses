@@ -24,7 +24,7 @@ npm run build
 docker compose up -d --build
 ```
 
-Open [the demo dashboard](http://localhost:8090/projects/mapgl/dashboards/mapgl-demo). The stack registers the Mapgl module and CUE schema, provisions a project, JSON datasource and dashboard, and serves `fixtures/graph.json` through the datasource proxy. The demo fixture has 10 nodes and 11 relationships, including branching paths and a Gateway → API → Queue → Worker → Metrics → Gateway cycle that exercises curved routes. Perses and Rsbuild share a container so the CLI's localhost registration is reachable by the backend. Source changes rebuild automatically; reload the dashboard to load a changed federated component.
+Open [the demo dashboard](http://localhost:8090/projects/mapgl/dashboards/mapgl-demo). The stack registers the Mapgl module and CUE schema, provisions a project, JSON datasource and dashboard, and serves `fixtures/graph.json` through the datasource proxy. The demo fixture has 10 nodes and 12 relationships, including branching paths, a cycle, and one multi-hop Gateway → API → Queue → Worker → Metrics edge. This logical edge has four routed hops for checking whole-edge hover and picking. Perses and Rsbuild share a container so the CLI's localhost registration is reachable by the backend. Source changes rebuild automatically; reload the dashboard to load a changed federated component.
 
 The OSS checkout is mounted read-only at `/workspace/mapgl`. Named volumes hold installed dependencies and Perses data. A separate dependency volume under panel-core isolates npm's writes from the sibling checkout. After dependency changes:
 
@@ -63,7 +63,7 @@ Configure exactly one `JsonQuery`. The panel reads `queryResults[0].data.data` a
 
 The Graph options editor exposes only `nodeIdField`, `targetField`, and optional `labelField`, defaulting to `id`, `target`, and `label`. These are literal top-level property names, including names containing dots. Required mappings must contain a non-whitespace character; CUE rejects invalid saved settings.
 
-IDs and nonempty targets must be strings or finite numbers; numeric zero is valid. Missing, null or empty-string targets make terminal/isolated nodes. The target field must exist in at least one nonempty row so a misspelled mapping is detected. Repeated IDs support fan-out, with the core selecting the primary row for the node label. Labels must be strings when present and fall back to the normalized ID. Dangling targets produce visible core diagnostics without synthesizing nodes. Arrays/objects as targets are rejected; emit one row per relationship instead.
+IDs must be strings or finite numbers; numeric zero is valid. A target can be a scalar node ID or an ordered array of at least two node IDs for one multi-hop edge, for example `["gateway", "api", "queue", "worker", "metrics"]`. Core inserts the source ID if it is omitted from the start of the path. Every hop must refer to a supplied node row. Missing, null or empty-string targets make terminal/isolated nodes. The target field must exist in at least one nonempty row so a misspelled mapping is detected. Repeated IDs support fan-out, with the core selecting the primary row for the node label. Labels must be strings when present and fall back to the normalized ID. Dangling targets produce visible core diagnostics without synthesizing nodes. Objects and invalid path elements are rejected; invalid paths produce core diagnostics.
 
 The adapter clones and freezes accepted rows, preserves original row indexes, and assigns revisions only when query data or bindings change. It supplies the core `GraphSource` directly, without emulating Grafana DataFrames. Pan, zoom and selection do not change source revisions.
 
@@ -73,7 +73,7 @@ Successful empty responses clear the graph. Adapter/layout failures show an erro
 
 Click a node to emphasize it, its immediate incoming/outgoing neighbors and their connecting edges/arrows. Other nodes, labels and edges dim to 18% opacity; dimmed nodes remain selectable. The selection card's clear button or a background click restores the full graph. Traversal stops after one hop; terminal and isolated nodes and numeric zero IDs are supported.
 
-Highlighting uses the existing core PointStore/GraphHighlighter and public layer dimming helper. Selection does not relayout the graph, change source revisions or reset pan/zoom. A successful refresh recomputes a surviving node's neighborhood and clears focus when the selected node disappears; failed adapter/layout updates retain the last committed graph and focus. Each panel keeps its own focus state, and baseline color buffers remain unchanged.
+Hover uses the same delayed-hover hook, PointStore/GraphHighlighter and layer dimming as Grafana graph mode. Hovering any curve fragment emphasizes the whole logical edge, including every hop of a multi-hop route. Edge clicks select the logical source and focus that edge; nodes retain one-hop neighborhood selection. No custom hover shader or separate traversal implementation is used. Hover and selection do not relayout the graph, change source revisions or reset pan/zoom. A successful refresh recomputes a surviving node's neighborhood and clears focus when the selected node disappears; failed adapter/layout updates retain the last committed graph and focus. Each panel keeps its own focus state, and baseline color buffers remain unchanged.
 
 ## Selected-node relationships
 
@@ -85,9 +85,9 @@ The selection card reuses core relationship sections and widget buttons. Expand 
 
 ## Graph display controls
 
-Open **Graph display** at the upper left of the panel to toggle **Nodes**, **Labels**, and **Edges** using the core LayerSwitcher. Nodes and labels are independent; Edges controls curves and arrowheads together. Hidden elements do not participate in canvas picking. Toggling changes rendering without relayout, pan/zoom reset, source revision changes or clearing the selected neighborhood.
+Open **Graph display** at the upper left of the panel to toggle **Nodes**, **Labels**, **Edges** and **Routed** using the core LayerSwitcher. Nodes and labels are independent; Edges controls the current edge representation and its arrowheads. Routed switches between routed curves/arrows and non-routed arcs using the shared core factories. Hidden elements do not participate in canvas picking. Toggling changes rendering without relayout, pan/zoom reset, source revision changes or clearing the selected neighborhood.
 
-Choices belong to each mounted panel and survive query refreshes, failed updates and empty responses, whether the switcher is open or closed. A dashboard reload/remount starts with all three controls enabled. These runtime controls do not add panel configuration or multiple data layers. The overlay follows the host light/dark color scheme and remains usable in narrow panels.
+Choices belong to each mounted panel and survive query refreshes, failed updates and empty responses, whether the switcher is open or closed. A dashboard reload/remount starts with all four controls enabled. These runtime controls do not add panel configuration or multiple data layers. The overlay follows the host light/dark color scheme and remains usable in narrow panels.
 
 Geographic maps, search, multiple graph layers, field overrides and Pro editing are outside this MVP.
 
@@ -116,3 +116,19 @@ The audit now reports no high or critical findings. Three moderate entries remai
 `openspec -> ../mapgl-spec/openspec` attaches this repository to the shared OpenSpec store. The proposal, design, specs and completed tasks are in `add-perses-node-graph-mvp`; `openspec validate add-perses-node-graph-mvp --strict` validates the change. Neighborhood highlighting is tracked in `add-perses-neighborhood-highlighting`, with its proposal, design, capability spec and completed tasks in the same store. Runtime display controls are tracked in `add-perses-layer-switcher`. Selected-node relationship controls are tracked in `add-perses-node-relationships`.
 
 Official references: [plugin creation](https://perses.dev/perses/docs/plugins/creation/), [JSON plugin release](https://github.com/perses/plugins/releases/tag/json/v0.1.0-beta.2), [Perses beta release](https://github.com/perses/perses/releases/tag/v0.55.0-beta.4).
+
+## Shared renderer and edition ownership
+
+This repository contains the OSS Perses shell and public `perses-adapter`. Its product target is near-full OSS Grafana functionality excluding Geomap. The current single-query MVP and remaining relationship/settings differences are stages toward that target.
+
+`PersesGraphSession` owns the controller, worker and `PanelRenderSession`; the shell observes the renderer through `useRenderFrame`. Standard scene capture, routed/arc geometry, mappings, node/label/arrow factories, visibility, focus and publication are core-owned. The adapter retains JSON binding, errors, semantic actions and topology/size fit policy. Cartesian extent/fit math is shared, with explicit current Perses margins and zoom ceiling. No host-specific rendering branch or duplicate orchestration loop remains.
+
+Core tests exercise multiple layers/namespaces, repeated routes, SVG, donut/gauge inputs, bounds and private factory substitutions. These capabilities can be adopted by Perses through neutral inputs as their native settings/query contracts are implemented; they are not new MVP configuration in this change.
+
+A future separate Pro Perses shell can pursue Grafana Pro parity by reusing this public adapter and core, and supplying private editing/path/comment/cluster and engine contributions. Private implementations belong in that future shell and private packages. This OSS repository and its public adapter do not import Pro packages or shells, and this change creates no Pro Perses repository.
+
+## Render orchestration verification (2026-10-04)
+
+All 48 adapter tests, TypeScript, the public dependency boundary and the Docker federation build pass against core sources. The original core curve picker and shaders are unchanged. Tests resolve every hop of the demo path through that picker and exercise the existing GraphHighlighter, with whole-logical-edge focus and no hover-triggered frame replacement or layout.
+
+The built dashboard displays 10 nodes and 12 logical edges. Browser checks verified routed/arc switching, picking the Worker → Metrics hop of the multi-hop edge selects Gateway and dims unrelated layers, retained focus through routing changes/pan/zoom/refresh, and background selection clearing. No runtime errors occurred after refreshing the built-module registration. Docker remains in built mode. After rebuilding static assets, restart the dev service to refresh Perses's cached federation manifest. The demo query includes `fixture=multi-hop` to distinguish its revised data from the previous infinitely cached JSON query.

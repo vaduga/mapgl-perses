@@ -6,6 +6,7 @@ const controls = [
   ["Nodes", colTypes.Circle],
   ["Labels", colTypes.Label],
   ["Edges", colTypes.Edges],
+  ["Routed", colTypes.Routed],
 ] as const;
 
 /** Core visibility owns state; only the menu presentation is limited to the MVP. */

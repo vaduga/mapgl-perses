@@ -56,7 +56,7 @@ describe("core-backed Perses lifecycle", () => {
     expect(
       session.controller.scene.visibility.getVisibleNamespaces(),
     ).toContain("external");
-    session.pick({ object: state.visual.state.features[0] });
+    session.pick({ picked: true, object: state.visual.state.features[0] });
     expect(session.controller.stores.pointStore.getSelectedNode?.id).toBe("0");
     const revision = state.snapshot.frames[0].revision;
     session.viewport({ ...initialViewport, zoom: 1 });
