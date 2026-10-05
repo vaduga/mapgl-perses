@@ -87,11 +87,14 @@ export function MapglComponent({
       session.controller.setViewport(next, "host");
     }
   }, [session, state, width, height]);
-  const { layers } = useRenderFrame(session?.renderer);
+  const { layers, error: renderError } = useRenderFrame(session?.renderer);
   const onHover = useDelayedHover((info) => session?.hover(info));
   const selected = session && getSelectedNodeDetails(session.controller);
   const status =
     session?.error ??
+    (renderError === undefined
+      ? undefined
+      : `Render update failed: ${renderError}`) ??
     (view?.pending
       ? "Calculating graph layout…"
       : view?.phase === "empty"
@@ -153,7 +156,9 @@ export function MapglComponent({
       {status && (
         <div
           className="mapgl-perses-status"
-          role={session?.error ? "alert" : "status"}
+          role={
+            session?.error || renderError !== undefined ? "alert" : "status"
+          }
         >
           {status}
         </div>

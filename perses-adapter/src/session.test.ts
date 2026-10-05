@@ -7,6 +7,7 @@ import {
 type LayoutRequest = Parameters<typeof getLayoutResult>[0];
 import { PersesGraphSession, type LayoutClient } from "./session";
 import { initialViewport } from "./viewport";
+import { graphRenderOptions } from "./layers";
 const options = {
   nodeIdField: "id",
   targetField: "target",
@@ -39,6 +40,30 @@ function client(): LayoutClient {
 }
 
 describe("core-backed Perses lifecycle", () => {
+  it("retains the frame and reports renderer errors independently of query/layout status", async () => {
+    const session = new PersesGraphSession(client());
+    await session.update(rows, options);
+    await session.renderer.build();
+    const frame = session.renderer.frame;
+    const state = session.controller.state,
+      view = session.controller.view;
+    session.renderer.configure({
+      ...graphRenderOptions,
+      extend: () => {
+        throw Error("Factory unavailable");
+      },
+    });
+    await session.renderer.build();
+    expect(session.renderer.frame).toBe(frame);
+    expect(session.renderer.error).toBe("Factory unavailable");
+    expect(session.error).toBeUndefined();
+    expect(session.controller.state).toBe(state);
+    expect(session.controller.view).toBe(view);
+    session.renderer.configure(graphRenderOptions);
+    await session.renderer.build();
+    expect(session.renderer.error).toBeUndefined();
+    session.dispose();
+  });
   it("normalizes fan-out and isolated nodes, uses primary-row labels and runs MSAGL layout", async () => {
     const session = new PersesGraphSession(client());
     await session.update(rows, options);
