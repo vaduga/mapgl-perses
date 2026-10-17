@@ -2,6 +2,8 @@
 
 Public Perses panel shell with a local `@vaduga/mapgl-perses-adapter`. The MVP displays one JSON query as an abstract node graph using the OSS Mapgl core: automatic left-to-right layout, directed edges, labels, pan/zoom, node ID/label selection immediate-neighbor highlighting and runtime display controls.
 
+![Mapgl graph panel running in Perses](src/img/screenshot_0.png)
+
 ## Local source development
 
 Keep `mapgl-perses`, `mapgl` and `mapgl-spec` as sibling checkouts. The repository `panel-core -> ../mapgl/panel-core` symlink supplies `@vaduga/mapgl-core` through the `file:./panel-core` dependency. The local `@vaduga/mapgl-perses-adapter` is an npm workspace package. TypeScript, Rsbuild and Vitest select the packages’ `development` export condition and resolve their public entry points directly from `src/`, without package-path aliases or TypeScript `paths` mappings. No core build, package archive or vendor sync is needed.
