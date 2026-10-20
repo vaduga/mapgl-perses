@@ -44,12 +44,13 @@ export class PersesGraphSession {
             return result;
           },
         ),
-      prepareCommit: (state) => ({
-        visibility: new PersesVisibility(
-          state.graph.state.graph,
-          state.visual.state.groups.length,
-        ),
-      }),
+      commitGraph: (state, commitScene) =>
+        commitScene({
+          visibility: new PersesVisibility(
+            state.graph.state.graph,
+            state.visual.state.groups.length,
+          ),
+        }),
     });
     this.renderer = createGraphRenderer(this.controller);
   }
@@ -85,7 +86,7 @@ export class PersesGraphSession {
         createGraphFrameViewState({
           phase: "fatal",
           pending: false,
-          runtime: this.controller.state,
+          acceptedState: this.controller.state,
         }),
       );
     }
