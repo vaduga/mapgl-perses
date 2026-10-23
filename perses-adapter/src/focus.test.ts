@@ -14,7 +14,6 @@ function createGraphLayers(
   renderer.dispose();
   return layers;
 }
-import { getSelectedNodeDetails, getNodeDetails } from "./selection";
 import { initialViewport } from "./viewport";
 import demoRows from "../../fixtures/graph.json";
 
@@ -592,113 +591,6 @@ describe("Perses core LayerSwitcher visibility integration", () => {
     } finally {
       one.dispose();
       two.dispose();
-    }
-  });
-});
-
-describe("Perses selected-node core relationship sections", () => {
-  it("resolves labels and zero IDs, navigates neighbors without layout and handles isolated/terminal nodes", async () => {
-    const layout = layoutClient();
-    const session = new PersesGraphSession(layout.client);
-    try {
-      await session.update(rows, options);
-      select(session, "api");
-      const selected = getSelectedNodeDetails(session.controller)!;
-      expect(selected.label).toBe("API");
-      expect(selected.sections).toHaveLength(1);
-      const section = selected.sections[0];
-      expect(section.incoming).toHaveLength(1);
-      expect(section.outgoing).toHaveLength(1);
-      const neighbor = getNodeDetails(
-        session.controller,
-        section.incoming[0].source,
-      )!;
-      expect(neighbor).toMatchObject({ id: "0", label: "Browser" });
-      session.viewport({ ...initialViewport, zoom: 1, target: [30, 50, 0] });
-      const viewport = session.controller.stores.viewStore.viewState;
-      const state = session.controller.state;
-      const requests = layout.requests();
-      session.controller.select({
-        id: neighbor.id,
-        namespaceId: neighbor.namespaceId,
-      });
-      expect(getSelectedNodeDetails(session.controller)?.id).toBe("0");
-      expect(connected(session)).toEqual(["0", "api"]);
-      expect(layout.requests()).toBe(requests);
-      expect(session.controller.state).toBe(state);
-      expect(session.controller.stores.viewStore.viewState).toEqual(viewport);
-      select(session, "database");
-      expect(
-        getSelectedNodeDetails(session.controller)?.sections[0].incoming,
-      ).toHaveLength(2);
-      expect(
-        getSelectedNodeDetails(session.controller)?.sections[0].outgoing,
-      ).toHaveLength(0);
-      select(session, "isolated");
-      expect(getSelectedNodeDetails(session.controller)?.sections).toEqual([]);
-      session.controller.select(undefined);
-      expect(getSelectedNodeDetails(session.controller)).toBeUndefined();
-    } finally {
-      session.dispose();
-    }
-  });
-
-  it("refreshes connections and labels, retains committed details on errors, and removes stale selection", async () => {
-    const session = new PersesGraphSession(layoutClient().client);
-    try {
-      await session.update(rows, options);
-      select(session, "api");
-      await session.update(
-        rows.map((row) =>
-          row.id === "api"
-            ? { ...row, target: "worker", label: "Updated API" }
-            : row,
-        ),
-        options,
-      );
-      const details = getSelectedNodeDetails(session.controller)!;
-      expect(details.label).toBe("Updated API");
-      expect(
-        getNodeDetails(
-          session.controller,
-          details.sections[0].outgoing[0].target,
-        )?.label,
-      ).toBe("Worker");
-      await session.update([{ id: "bad", target: [] }], options);
-      expect(getSelectedNodeDetails(session.controller)?.label).toBe(
-        "Updated API",
-      );
-      await session.update(
-        rows
-          .filter((row) => row.id !== "api")
-          .map((row) => (row.id === 0 ? { ...row, target: null } : row)),
-        options,
-      );
-      expect(getSelectedNodeDetails(session.controller)).toBeUndefined();
-    } finally {
-      session.dispose();
-    }
-  });
-
-  it("follows core repeated-row deduplication and outgoing self relationships", async () => {
-    const session = new PersesGraphSession(layoutClient().client);
-    try {
-      await session.update(
-        [
-          { id: "a", target: "b" },
-          { id: "a", target: "b" },
-          { id: "a", target: "a" },
-          { id: "b", target: null },
-        ],
-        options,
-      );
-      select(session, "a");
-      const section = getSelectedNodeDetails(session.controller)!.sections[0];
-      expect(section.outgoing).toHaveLength(2);
-      expect(section.incoming).toHaveLength(0);
-      expect(new Set(section.outgoing.map((record) => record.id)).size).toBe(2);
-    } finally {
-      session.dispose();
     }
   });
 });

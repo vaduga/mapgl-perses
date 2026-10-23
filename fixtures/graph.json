@@ -2,12 +2,17 @@
   {
     "id": "browser",
     "target": "api",
-    "label": "Browser"
+    "label": "Browser",
+    "requests": 0,
+    "errors": false,
+    "owner": { "team": "frontend" }
   },
   {
     "id": "api",
     "target": "database",
-    "label": "API"
+    "label": "API",
+    "latencyMs": 42,
+    "tags": ["critical", "public"]
   },
   {
     "id": "database",
@@ -67,6 +72,8 @@
   {
     "id": "gateway",
     "target": ["gateway", "api", "queue", "worker", "metrics"],
-    "label": "Gateway"
+    "label": "Gateway",
+    "latencyMs": 68,
+    "description": "Multi-hop processing route"
   }
 ]

@@ -53,6 +53,7 @@ export default defineConfig({
         react: { requiredVersion: "^18.2.0", singleton: true },
         "react-dom": { requiredVersion: "^18.2.0", singleton: true },
         "@perses-dev/plugin-system": { singleton: true },
+        "@emotion/react": { singleton: true },
       },
       dts: false,
       runtime: false,
@@ -63,7 +64,11 @@ export default defineConfig({
     htmlPlugin: false,
     rspack: (config) => {
       config.resolve ??= {};
-      config.resolve.conditionNames = ["development", "visgl:webgl-only", "..."];
+      config.resolve.conditionNames = [
+        "development",
+        "visgl:webgl-only",
+        "...",
+      ];
       config.resolve.modules = [resolve("node_modules"), "node_modules"];
       config.module ??= {};
       config.module.rules ??= [];

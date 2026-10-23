@@ -73,17 +73,19 @@ Successful empty responses clear the graph. Adapter/layout failures show an erro
 
 ## Neighborhood highlighting
 
-Click a node to emphasize it, its immediate incoming/outgoing neighbors and their connecting edges/arrows. Other nodes, labels and edges dim to 18% opacity; dimmed nodes remain selectable. The selection card's clear button or a background click restores the full graph. Traversal stops after one hop; terminal and isolated nodes and numeric zero IDs are supported.
+Click a node to emphasize it, its immediate incoming/outgoing neighbors and their connecting edges/arrows. Other nodes, labels and edges dim to 18% opacity; dimmed nodes remain selectable. The tooltip's close button or a background click restores the full graph. Traversal stops after one hop; terminal and isolated nodes and numeric zero IDs are supported.
 
 Hover uses the same delayed-hover hook, PointStore/GraphHighlighter and layer dimming as Grafana graph mode. Hovering any curve fragment emphasizes the whole logical edge, including every hop of a multi-hop route. Edge clicks select the logical source and focus that edge; nodes retain one-hop neighborhood selection. No custom hover shader or separate traversal implementation is used. Hover and selection do not relayout the graph, change source revisions or reset pan/zoom. A successful refresh recomputes a surviving node's neighborhood and clears focus when the selected node disappears; failed adapter/layout updates retain the last committed graph and focus. Each panel keeps its own focus state, and baseline color buffers remain unchanged.
 
-## Selected-node relationships
+## Graph inspection
 
-**Needs further matching and implementation:** this is a first Perses adoption. Its relationship-card interactions do not yet fully match the Grafana adapter. Compare the adapters, document the remaining behavioral differences, and implement the intended parity in a follow-up. Current verification covers the Perses behavior described below; it does not establish Grafana parity.
+Hover a node or connection to inspect its data; click to pin the shared panel-core tooltip. The tooltip shows the original JSON row's own fields in field order, including zero, false, null, arrays and objects. Repeated node IDs use the core primary row. Routed hops use their associated source row, while a non-routed arc inspects the whole logical connection's primary row. No internal graph properties are exposed.
 
-The selection card reuses core relationship sections and widget buttons. Expand the incoming/down or outgoing/up counts to see neighboring node labels, then choose a neighbor to select and highlight it. Counts follow committed core relationship deduplication; isolated nodes show **No relationships**. Surviving selections update their labels and connections on refresh, while switching nodes resets list expansion and copy feedback.
+Expand the incoming/down or outgoing/up controls to inspect core adjacency records. Each row identifies a connection; selecting it shows that connection's properties and pins its highlight. The original node/edge remains the list context. Hovering another graph object temporarily previews it; leaving restores the pin and selected edge highlight at the saved position. These interactions preserve layout, source revisions and camera position. Isolated nodes have no adjacency controls.
 
-**Copy node ID** copies the normalized ID and reports success or failure. The card scrolls within the panel and its controls preserve graph pan/zoom and layout.
+Picking another graph object preserves the chosen adjacency direction and expanded/collapsed state, matching Grafana.
+
+The close button and blank canvas clear inspection and selection. Tooltip content scrolls within the panel, supports keyboard activation, and follows the Perses light/dark theme using core styles. Failed or pending data refreshes retain the displayed revision's properties; successful refreshes rebind surviving identities and clear removed selections.
 
 ## Graph display controls
 
@@ -134,3 +136,13 @@ A future separate Pro Perses shell can pursue Grafana Pro parity by reusing this
 All 48 adapter tests, TypeScript, the public dependency boundary and the Docker federation build pass against core sources. The original core curve picker and shaders are unchanged. Tests resolve every hop of the demo path through that picker and exercise the existing GraphHighlighter, with whole-logical-edge focus and no hover-triggered frame replacement or layout.
 
 The built dashboard displays 10 nodes and 12 logical edges. Browser checks verified routed/arc switching, picking the Worker → Metrics hop of the multi-hop edge selects Gateway and dims unrelated layers, retained focus through routing changes/pan/zoom/refresh, and background selection clearing. No runtime errors occurred after refreshing the built-module registration. Docker remains in built mode. After rebuilding static assets, restart the dev service to refresh Perses's cached federation manifest. The demo query includes `fixture=multi-hop` to distinguish its revised data from the previous infinitely cached JSON query.
+
+## Shared tooltip adoption
+
+The `extract-host-neutral-graph-tooltip` change in the shared OpenSpec store includes Perses adoption. The shell now uses the same graph-only tooltip as the MCP and Grafana consumers, with JSON property preparation in `perses-adapter`. The former custom relationship card and neighbor-navigation presentation have been removed. The shell shares the host's Emotion context so MUI's theme mode supplies the core `dark` input; it defines no icon fallback palette.
+
+### Verification (2026-10-23)
+
+All 52 adapter tests, TypeScript, the public dependency boundary and the federation build pass. Tests cover original JSON property values/order, repeated-node primary rows, routed-hop/arc provenance, revision mismatches, pending/failed refresh retention, selected-edge hover restoration and clearing removed identities.
+
+After each frontend build, the Perses dev service was restarted before browser validation. On Perses v0.55.0-beta.4, actual WebGL picking verified property rows, adjacency expansion and selection, keyboard activation, temporary hover preview and restoration of the pinned edge highlight at unchanged tooltip coordinates. Light/dark styling follows the host's shared Emotion context. Core resets inherited list margin/padding, aligning the header and direction controls; the former Copy node ID header action is removed. Fresh-service plugin-registration errors resolved after registration completed. The local demo remains in live-source mode.

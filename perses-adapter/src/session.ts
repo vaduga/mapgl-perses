@@ -2,13 +2,24 @@ import { PanelController } from "@vaduga/mapgl-core/runtime";
 import {
   createGraphFrameViewState,
   resolveGraphPanelLayout,
+  type GraphFrameSnapshot,
 } from "@vaduga/mapgl-core/graph/frame";
+import {
+  tooltipProperties,
+  type TooltipContent,
+  type TooltipInspection,
+} from "@vaduga/mapgl-core/components/Tooltips/GraphTooltip";
+import { blankHoverInfo } from "@vaduga/mapgl-core/types/defaults";
 import { type ViewState } from "@vaduga/mapgl-core/types";
 import type {
   GraphLayoutRequestInput,
   GraphLayoutWorkerResult,
 } from "@vaduga/mapgl-core/graph/utils/layout-worker-client";
-import { JsonGraphBindings, type GraphBindings } from "./input";
+import {
+  JsonGraphBindings,
+  type GraphBindings,
+  type JsonGraphSource,
+} from "./input";
 import { createGraphInput } from "./visuals";
 import { createGraphRenderer } from "./layers";
 import { PersesVisibility } from "./visibility";
@@ -24,6 +35,10 @@ export class PersesGraphSession {
   readonly controller: PanelController;
   readonly renderer: ReturnType<typeof createGraphRenderer>;
   private readonly bindings = new JsonGraphBindings();
+  private readonly tooltipSources = new WeakMap<
+    GraphFrameSnapshot,
+    JsonGraphSource
+  >();
   private request = 0;
   private disposed = false;
   error?: string;
@@ -44,13 +59,17 @@ export class PersesGraphSession {
             return result;
           },
         ),
-      commitGraph: (state, commitScene) =>
+      commitGraph: (state, commitScene) => {
+        const source = this.bindings.currentSource;
+        if (source?.revision === state.snapshot.frames[0]?.revision)
+          this.tooltipSources.set(state.snapshot, source);
         commitScene({
           visibility: new PersesVisibility(
             state.graph.state.graph,
             state.visual.state.groups.length,
           ),
-        }),
+        });
+      },
     });
     this.renderer = createGraphRenderer(this.controller);
   }
@@ -76,7 +95,7 @@ export class PersesGraphSession {
         points.getHasFocusHighlight &&
         !points.getSelectedNode
       ) {
-        this.controller.select(undefined);
+        this.clearSelection();
       }
     } catch (error) {
       if (this.disposed || request !== this.request) return;
@@ -95,13 +114,42 @@ export class PersesGraphSession {
     const state = this.controller.state;
     if (!state || this.disposed) return;
     const key = this.renderer.resolvePick(info);
-    if (key) this.controller.selectElement(key);
-    else if (!(info as { picked?: boolean })?.picked)
-      this.controller.select(undefined);
+    if (key) {
+      const pick = info as { x?: number; y?: number };
+      const points = this.controller.stores.pointStore;
+      points.setTooltipObject({
+        ...pick,
+        x: pick.x ?? 0,
+        y: pick.y ?? 0,
+        mapglPinned: true,
+      });
+      this.controller.selectElement(key);
+    } else if (!(info as { picked?: boolean })?.picked) this.clearSelection();
   }
   hover(info: unknown): void {
-    if (!this.disposed)
-      this.controller.stores.pointStore.focus(this.renderer.resolvePick(info));
+    if (!this.disposed) this.renderer.focusHover(info);
+  }
+  clearSelection(): void {
+    if (this.disposed) return;
+    this.controller.stores.pointStore.setTooltipObject(blankHoverInfo);
+    this.controller.select(undefined);
+  }
+  tooltipContent(inspection: TooltipInspection): TooltipContent | undefined {
+    const snapshot = this.renderer.frame?.input.snapshot;
+    const source = snapshot && this.tooltipSources.get(snapshot);
+    const row = inspection.interaction?.row;
+    if (
+      !source ||
+      !row ||
+      row.revision !== source.revision ||
+      row.sourceIndex !== source.index ||
+      row.sourceKey !== source.key
+    )
+      return undefined;
+    const values = source.rows[row.rowIndex];
+    return values
+      ? { properties: tooltipProperties(Object.entries(values)) }
+      : undefined;
   }
   viewport(value: ViewState): void {
     this.controller.setViewport(value);

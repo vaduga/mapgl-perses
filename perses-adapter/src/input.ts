@@ -6,6 +6,9 @@ export interface GraphBindings {
   labelField?: string;
 }
 export type JsonRow = Readonly<Record<string, unknown>>;
+export interface JsonGraphSource extends GraphSource {
+  readonly rows: readonly JsonRow[];
+}
 export class GraphInputError extends Error {}
 const own = (row: JsonRow, field: string) => Object.hasOwn(row, field);
 const validId = (value: unknown) =>
@@ -25,12 +28,15 @@ function freeze(value: unknown): void {
 export class JsonGraphBindings {
   private revision = 0;
   private signature?: string;
-  private source?: GraphSource;
+  private source?: JsonGraphSource;
+  get currentSource(): JsonGraphSource | undefined {
+    return this.source;
+  }
   bind(
     payload: unknown,
     bindings: GraphBindings,
     queryCount: number,
-  ): GraphSource {
+  ): JsonGraphSource {
     if (queryCount !== 1)
       throw new GraphInputError("Configure exactly one JSON query.");
     if (!bindings.nodeIdField?.trim() || !bindings.targetField?.trim())
@@ -89,6 +95,7 @@ export class JsonGraphBindings {
       key: "query:0",
       index: 0,
       rowCount: rows.length,
+      rows,
       nodeId: column(bindings.nodeIdField),
       target: column(bindings.targetField),
       value: (key: string, index: number) =>

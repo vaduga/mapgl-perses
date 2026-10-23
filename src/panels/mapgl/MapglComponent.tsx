@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useRenderFrame } from "@vaduga/mapgl-core/render/react";
 import { useDelayedHover } from "@vaduga/mapgl-core/render";
 import DeckGL from "@deck.gl/react";
+import { useTheme } from "@mui/material/styles";
+import { GraphTooltip } from "@vaduga/mapgl-core/components/Tooltips/GraphTooltip";
 import LayerSwitcher from "@vaduga/mapgl-core/components/Menu/LayerSwitcher";
 import {
   OrbitView,
@@ -14,11 +16,9 @@ import {
   createLayoutClient,
   fitGraph,
   initialViewport,
-  getSelectedNodeDetails,
 } from "@vaduga/mapgl-perses-adapter";
 import type { MapglProps } from "./mapgl-types";
 import "./mapgl.css";
-import { NodeSelectionCard } from "./NodeSelectionCard";
 
 const views = [new OrbitView({ id: "3d-scene", controller: true })];
 export function MapglComponent({
@@ -29,6 +29,8 @@ export function MapglComponent({
 }: MapglProps) {
   const container = useRef<HTMLDivElement>(null);
   const [session, setSession] = useState<PersesGraphSession>();
+  const [hoverInfo, setHoverInfo] = useState<PickingInfo>();
+  const dark = useTheme().palette.mode === "dark";
   const [, redraw] = useState(0);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [viewport, setViewport] = useState<GraphViewport>(initialViewport);
@@ -87,9 +89,13 @@ export function MapglComponent({
       session.controller.setViewport(next, "host");
     }
   }, [session, state, width, height]);
-  const { layers, error: renderError } = useRenderFrame(session?.renderer);
-  const onHover = useDelayedHover((info) => session?.hover(info));
-  const selected = session && getSelectedNodeDetails(session.controller);
+  const {
+    frame,
+    layers,
+    error: renderError,
+  } = useRenderFrame(session?.renderer);
+  useEffect(() => setHoverInfo(undefined), [frame?.input.generation]);
+  const focusHover = useDelayedHover((info) => session?.hover(info));
   const status =
     session?.error ??
     (renderError === undefined
@@ -106,6 +112,7 @@ export function MapglComponent({
     <div
       ref={container}
       className="mapgl-perses"
+      style={{ colorScheme: dark ? "dark" : "light" }}
       data-testid="mapgl-graph"
       data-phase={view?.phase ?? "loading"}
     >
@@ -125,8 +132,14 @@ export function MapglComponent({
           setViewport(next);
           session?.viewport(next);
         }}
-        onClick={(info: PickingInfo) => session?.pick(info)}
-        onHover={onHover}
+        onClick={(info: PickingInfo) => {
+          session?.pick(info);
+          setHoverInfo(undefined);
+        }}
+        onHover={(info: PickingInfo) => {
+          setHoverInfo(info);
+          focusHover(info);
+        }}
         getCursor={({ isHovering }) => (isHovering ? "pointer" : "grab")}
       />
       {session && (
@@ -177,11 +190,21 @@ export function MapglComponent({
           ? `${state.snapshot.nodes.length} nodes · ${state.snapshot.relations.recordCount} edges`
           : ""}
       </div>
-      {session && selected && (
-        <NodeSelectionCard
-          key={selected.key}
-          session={session}
-          selected={selected}
+      {session && frame && (
+        <GraphTooltip
+          controller={session.controller}
+          scene={{
+            snapshot: frame.input.snapshot,
+            render: frame.input.render,
+            isRouted: frame.input.presentation.isRouted,
+          }}
+          info={hoverInfo}
+          dark={dark}
+          getContent={(inspection) => session.tooltipContent(inspection)}
+          onClose={() => {
+            session.clearSelection();
+            setHoverInfo(undefined);
+          }}
         />
       )}
     </div>
