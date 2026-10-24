@@ -9,6 +9,7 @@ import {
 import { adjacentEdgeTooltipSectionContributor } from "@vaduga/mapgl-core/featureContracts";
 import { getLayoutResult } from "@vaduga/mapgl-core/graph/utils/layout-worker-runner";
 import { createLayoutRequest } from "@vaduga/mapgl-core/graph/utils/layout-worker-client";
+import { blankHoverInfo } from "@vaduga/mapgl-core/types/defaults";
 import { PersesGraphSession, type LayoutClient } from "./session";
 
 const options = {
@@ -255,6 +256,89 @@ describe("Perses shared graph tooltip", () => {
       session.dispose();
     }
   });
+
+  it.each(["node", "routed edge", "arc edge"])(
+    "restores the selected %s after closing its tooltip and hovering other objects",
+    async (kind) => {
+      const layout = layoutClient();
+      const session = new PersesGraphSession(layout.client);
+      try {
+        await session.update(rows, options);
+        if (kind === "arc edge") {
+          const routed = session.controller.scene.visibility
+            .getLayerTree()
+            .find((layer) => layer.label === "Routed")!;
+          session.controller.scene.setVisibility(routed, false, "group", []);
+        }
+        await session.renderer.build();
+        const edgePick = (id: string) => {
+          const input = scene(session);
+          const record = input.snapshot!.relations.getRecordRefsById(id)![0];
+          const edge = [...input.render.edgeIndex.recordEdges(record)].at(-1)!;
+          return {
+            picked: true,
+            x: 80,
+            y: 60,
+            object: {
+              edgeId: kind === "arc edge" ? id : edge.id,
+              edgeRef:
+                kind === "arc edge"
+                  ? undefined
+                  : input.render.edgeIndex.getEdgeRef(edge),
+            },
+          };
+        };
+        const pick = kind === "node" ? nodePick(session, "b") : edgePick("a-c");
+        session.pick(pick);
+        await session.renderer.build();
+        const inspection = inspectGraphTooltip(scene(session), pick)!;
+        const points = session.controller.stores.pointStore;
+        // GraphTooltip retains its target with closed=true when the view is dismissed.
+        points.setTooltipObject(blankHoverInfo);
+        points.setGraphTooltip({
+          target: inspection.target,
+          anchor: { x: 80, y: 60 },
+          closed: true,
+        });
+        const selected = points.getSelectedNode;
+        const edges = points.getSelEdges;
+        expect(selected?.id).toBe(kind === "node" ? "b" : "a");
+        expect(edges.length).toBeGreaterThan(0);
+        const focus = () => ({
+          node: points.focusedNodeId,
+          edge: points.focusedEdgeId,
+          connected: [...points.getFocusedConnectedNodeIds].sort(),
+        });
+        const expectedFocus = focus();
+        const pin = points.graphTooltip;
+        const state = session.controller.state;
+        const frame = session.renderer.frame;
+        const viewport = session.controller.stores.viewStore.viewState;
+        const requests = layout.requests();
+        for (const hover of [pick, nodePick(session, "a"), edgePick("a-b")]) {
+          session.hover(hover);
+          if (hover !== pick) expect(focus()).not.toEqual(expectedFocus);
+          expect(points.getSelectedNode).toBe(selected);
+          expect(points.getSelEdges).toEqual(edges);
+          session.hover({ picked: false });
+          expect(focus()).toEqual(expectedFocus);
+          expect(points.graphTooltip).toEqual(pin);
+          expect(points.graphTooltip?.closed).toBe(true);
+        }
+        expect(session.controller.state).toBe(state);
+        expect(session.renderer.frame).toBe(frame);
+        expect(session.controller.stores.viewStore.viewState).toEqual(viewport);
+        expect(layout.requests()).toBe(requests);
+        session.pick({ picked: false });
+        expect(points.getSelectedNode).toBeNull();
+        expect(points.getSelEdges).toEqual([]);
+        expect(points.graphTooltip).toBeUndefined();
+        expect(points.getHasFocusHighlight).toBe(false);
+      } finally {
+        session.dispose();
+      }
+    },
+  );
 
   it("keeps displayed properties through pending/failed refreshes and rejects old provenance after a successful refresh", async () => {
     const layout = layoutClient();

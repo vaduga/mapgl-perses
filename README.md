@@ -73,7 +73,7 @@ Successful empty responses clear the graph. Adapter/layout failures show an erro
 
 ## Neighborhood highlighting
 
-Click a node to emphasize it, its immediate incoming/outgoing neighbors and their connecting edges/arrows. Other nodes, labels and edges dim to 18% opacity; dimmed nodes remain selectable. The tooltip's close button or a background click restores the full graph. Traversal stops after one hop; terminal and isolated nodes and numeric zero IDs are supported.
+Click a node to emphasize it, its immediate incoming/outgoing neighbors and their connecting edges/arrows. Other nodes, labels and edges dim to 18% opacity; dimmed nodes remain selectable. A background click clears selection and restores the full graph. Closing the tooltip preserves selection. Traversal stops after one hop; terminal and isolated nodes and numeric zero IDs are supported.
 
 Hover uses the same delayed-hover hook, PointStore/GraphHighlighter and layer dimming as Grafana graph mode. Hovering any curve fragment emphasizes the whole logical edge, including every hop of a multi-hop route. Edge clicks select the logical source and focus that edge; nodes retain one-hop neighborhood selection. No custom hover shader or separate traversal implementation is used. Hover and selection do not relayout the graph, change source revisions or reset pan/zoom. A successful refresh recomputes a surviving node's neighborhood and clears focus when the selected node disappears; failed adapter/layout updates retain the last committed graph and focus. Each panel keeps its own focus state, and baseline color buffers remain unchanged.
 
@@ -85,7 +85,7 @@ Expand the incoming/down or outgoing/up controls to inspect core adjacency recor
 
 Picking another graph object preserves the chosen adjacency direction and expanded/collapsed state, matching Grafana.
 
-The close button and blank canvas clear inspection and selection. Tooltip content scrolls within the panel, supports keyboard activation, and follows the Perses light/dark theme using core styles. Failed or pending data refreshes retain the displayed revision's properties; successful refreshes rebind surviving identities and clear removed selections.
+The close button dismisses the tooltip while retaining the selected node or edge and its highlight. Hovering another object temporarily previews it; moving away restores the selected highlight without reopening the closed tooltip. Clicking blank canvas clears inspection and selection. Tooltip content scrolls within the panel, supports keyboard activation, and follows the Perses light/dark theme using core styles. Failed or pending data refreshes retain the displayed revision's properties; successful refreshes rebind surviving identities and clear removed selections.
 
 ## Graph display controls
 

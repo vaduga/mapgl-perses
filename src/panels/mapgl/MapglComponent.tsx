@@ -202,7 +202,6 @@ export function MapglComponent({
           dark={dark}
           getContent={(inspection) => session.tooltipContent(inspection)}
           onClose={() => {
-            session.clearSelection();
             setHoverInfo(undefined);
           }}
         />
