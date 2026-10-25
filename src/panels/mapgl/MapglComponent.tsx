@@ -145,6 +145,10 @@ export function MapglComponent({
       {session && (
         <div
           className="mapgl-perses-controls"
+          style={{
+            maxHeight:
+              height > 0 ? `${Math.max(height - 24, 0)}px` : undefined,
+          }}
           onPointerDown={(event) => event.stopPropagation()}
           onWheel={(event) => event.stopPropagation()}
           onClick={(event) => event.stopPropagation()}
