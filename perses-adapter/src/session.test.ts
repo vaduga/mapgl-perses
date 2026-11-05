@@ -25,6 +25,7 @@ function client(): LayoutClient {
     requestLayout: async (input) => {
       const result = getLayoutResult(createLayoutRequest(input));
       return {
+        routing: result.routing,
         positions: result.positions,
         graphBounds: new Map(result.graphs.map((graph) => [graph.id, graph])),
         curveGroups: new Map(
