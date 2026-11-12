@@ -68,6 +68,14 @@ export function MapglComponent({
     spec.nodeIdField,
     spec.targetField,
     spec.labelField,
+    spec.edgeLabelField,
+    spec.sideALabelField,
+    spec.sideBLabelField,
+    spec.edgeRouting,
+    spec.nodeCards,
+    spec.animate,
+    spec.arrow,
+    spec.edgeLabels,
     queryCount,
   ]);
   const state = session?.controller.state;
@@ -146,8 +154,7 @@ export function MapglComponent({
         <div
           className="mapgl-perses-controls"
           style={{
-            maxHeight:
-              height > 0 ? `${Math.max(height - 24, 0)}px` : undefined,
+            maxHeight: height > 0 ? `${Math.max(height - 24, 0)}px` : undefined,
           }}
           onPointerDown={(event) => event.stopPropagation()}
           onWheel={(event) => event.stopPropagation()}

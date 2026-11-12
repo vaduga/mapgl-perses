@@ -427,7 +427,7 @@ describe("Perses core LayerSwitcher visibility integration", () => {
           .every((layer) => !layer.props.visible),
       ).toBe(true);
       await session.update(
-        rows.map((row) => ({ ...row, label: row.label + " updated" })),
+        rows.map((row) => ({ ...row, label: row.label.toUpperCase() })),
         options,
       );
       await session.renderer.build();

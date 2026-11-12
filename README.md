@@ -146,3 +146,11 @@ The `extract-host-neutral-graph-tooltip` change in the shared OpenSpec store inc
 All 52 adapter tests, TypeScript, the public dependency boundary and the federation build pass. Tests cover original JSON property values/order, repeated-node primary rows, routed-hop/arc provenance, revision mismatches, pending/failed refresh retention, selected-edge hover restoration and clearing removed identities.
 
 After each frontend build, the Perses dev service was restarted before browser validation. On Perses v0.55.0-beta.4, actual WebGL picking verified property rows, adjacency expansion and selection, keyboard activation, temporary hover preview and restoration of the pinned edge highlight at unchanged tooltip coordinates. Light/dark styling follows the host's shared Emotion context. Core resets inherited list margin/padding, aligning the header and direction controls; the former Copy node ID header action is removed. Fresh-service plugin-registration errors resolved after registration completed. The local demo remains in live-source mode.
+
+## Layout and edge presentation settings
+
+The Graph editor includes **Edge routing**, **Node cards**, **Arrow**, **Animate**, and **Edge labels always on**. Cards and animation default off. Perses uses MSAGL only; ELK support and an engine selector are deferred. Cards use matching dimensions in layout and drawing.
+
+Optional **Middle edge label field**, **Side A label field (source)** and **Side B label field (target)** bind literal top-level JSON properties. String and finite numeric label values are displayed; missing values produce no text. Focused edges reveal their configured labels even with always-on disabled. The core Label, edge and group visibility controls still apply.
+
+Animate follows the selected arrow: Forward source-to-target, Reverse target-to-source, Both outward from the whole rendered curve's midpoint, None static. These controls apply to this panel's current single graph layer. Display changes retain canonical picking, selection and the camera; no Grafana or private implementation is required.

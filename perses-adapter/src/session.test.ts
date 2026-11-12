@@ -41,6 +41,83 @@ function client(): LayoutClient {
 }
 
 describe("core-backed Perses lifecycle", () => {
+  it("propagates MSAGL, cards, flow and JSON labels without changing row revisions", async () => {
+    const sent: LayoutRequest[] = [];
+    const worker = {
+      onmessage: null as any,
+      onerror: null,
+      postMessage(request: LayoutRequest) {
+        sent.push(request);
+        worker.onmessage({ data: getLayoutResult(request) });
+      },
+    };
+    const layout = new LayoutWorkerClient(() => ({
+      worker: worker as unknown as Worker,
+      dispose() {},
+    }));
+    const session = new PersesGraphSession(layout);
+    const payload = [
+      {
+        id: "a",
+        target: "b",
+        label: "Card A",
+        edge: "link",
+        sent: 12,
+        received: 24,
+      },
+      { id: "b", target: null, label: "Card B" },
+    ];
+    const mappings = {
+      ...options,
+      edgeLabelField: "edge",
+      sideALabelField: "sent",
+      sideBLabelField: "received",
+    };
+    await session.update(payload, mappings);
+    const revision = session.controller.state!.snapshot.frames[0].revision;
+    await session.update(payload, {
+      ...mappings,
+      nodeCards: true,
+      animate: true,
+      arrow: 2,
+      edgeLabels: true,
+    });
+    await session.renderer.build();
+    const request = sent.at(-1)!;
+    expect(request.engine).toBe("MSAGL");
+    expect(request.cards).toBe(true);
+    expect(request.nodes[0].width).toBeGreaterThan(30);
+    expect(session.controller.state!.snapshot.frames[0].revision).toBe(
+      revision,
+    );
+    const visual = session.controller.state!.visual.state.edgeUnits[0]!;
+    expect(visual.style).toMatchObject({
+      animate: true,
+      arrow: 2,
+      text: "link",
+    });
+    expect(visual.arcStyle.sideA.text).toBe("12");
+    expect(visual.arcStyle.sideB.text).toBe("24");
+    const card = session.renderer.layers.find((layer) =>
+      layer.id.includes("-view-node-card"),
+    )!;
+    expect(card).toBeDefined();
+    session.pick({
+      picked: true,
+      index: 0,
+      layer: card,
+      object: (card.props.data as any[])[0],
+    });
+    expect(session.controller.stores.pointStore.getSelectedNode?.id).toBe("a");
+    await session.update(payload, { ...mappings, nodeCards: false });
+    await session.renderer.build();
+    expect(
+      session.renderer.layers.some((layer) =>
+        layer.id.includes("-view-node-card"),
+      ),
+    ).toBe(false);
+    session.dispose();
+  });
   it("retains the frame and reports renderer errors independently of query/layout status", async () => {
     const session = new PersesGraphSession(client());
     await session.update(rows, options);

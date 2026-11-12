@@ -17,11 +17,11 @@ import type {
 } from "@vaduga/mapgl-core/graph/utils/layout-worker-client";
 import {
   JsonGraphBindings,
-  type GraphBindings,
+  type GraphOptions,
   type JsonGraphSource,
 } from "./input";
 import { createGraphInput } from "./visuals";
-import { createGraphRenderer } from "./layers";
+import { createGraphRenderer, graphRenderOptions } from "./layers";
 import { PersesVisibility } from "./visibility";
 
 export interface LayoutClient {
@@ -41,13 +41,21 @@ export class PersesGraphSession {
   >();
   private request = 0;
   private disposed = false;
+  private options: GraphOptions = { nodeIdField: "id", targetField: "target" };
   error?: string;
   constructor(private readonly layout: LayoutClient) {
     this.controller = new PanelController({
       layout: (context) =>
         resolveGraphPanelLayout(
           context,
-          { config: { layoutDirection: "LR", edgeRouting: "Splines" } },
+          {
+            config: {
+              layoutDirection: "LR",
+              edgeRouting: this.options.edgeRouting ?? "Splines",
+              layoutEngine: "MSAGL",
+              nodeCards: this.options.nodeCards ?? false,
+            },
+          },
           async (input) => {
             if (!context.snapshot.nodes.length) return undefined;
             const result = await layout.requestLayout({
@@ -75,18 +83,48 @@ export class PersesGraphSession {
   }
   async update(
     payload: unknown,
-    options: GraphBindings,
+    options: GraphOptions,
     queryCount = 1,
   ): Promise<void> {
     if (this.disposed) return;
     const request = ++this.request;
     this.error = undefined;
     try {
-      const source = this.bindings.bind(payload, options, queryCount);
+      const {
+        nodeIdField,
+        targetField,
+        labelField,
+        edgeLabelField,
+        sideALabelField,
+        sideBLabelField,
+      } = options;
+      const source = this.bindings.bind(
+        payload,
+        {
+          nodeIdField,
+          targetField,
+          labelField,
+          edgeLabelField,
+          sideALabelField,
+          sideBLabelField,
+        },
+        queryCount,
+      );
+      this.options = { ...options };
       const result = await this.controller.update(
         createGraphInput(source, options),
       );
       const points = this.controller.stores.pointStore;
+      if (result?.ok && !this.disposed && request === this.request) {
+        this.renderer.configure({
+          ...graphRenderOptions,
+          presentation: {
+            ...graphRenderOptions.presentation,
+            nodeCards: options.nodeCards ?? false,
+            edgeLabels: options.edgeLabels ?? false,
+          },
+        });
+      }
       // Core retains semantic focus keys across commits; clear a removed node.
       if (
         result?.ok &&

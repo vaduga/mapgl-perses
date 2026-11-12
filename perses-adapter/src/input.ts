@@ -4,6 +4,16 @@ export interface GraphBindings {
   nodeIdField: string;
   targetField: string;
   labelField?: string;
+  edgeLabelField?: string;
+  sideALabelField?: string;
+  sideBLabelField?: string;
+}
+export interface GraphOptions extends GraphBindings {
+  edgeRouting?: "Splines" | "Rectilinear";
+  nodeCards?: boolean;
+  animate?: boolean;
+  arrow?: 0 | 1 | -1 | 2;
+  edgeLabels?: boolean;
 }
 export type JsonRow = Readonly<Record<string, unknown>>;
 export interface JsonGraphSource extends GraphSource {
