@@ -11,7 +11,6 @@ export interface GraphBindings {
 export interface GraphOptions extends GraphBindings {
   edgeRouting?: "Splines" | "Rectilinear";
   nodeCards?: boolean;
-  animate?: boolean;
   arrow?: 0 | 1 | -1 | 2;
   edgeLabels?: boolean;
 }

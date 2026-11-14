@@ -76,3 +76,21 @@
   max-height: inherit;
   min-width: 100px;
 }
+
+.mapgl-perses-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  pointer-events: auto;
+  margin-bottom: 6px;
+}
+.mapgl-perses-legend button {
+  color: CanvasText;
+  background: Canvas;
+  border: 1px solid var(--theme-border-weak);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.mapgl-perses-legend button[aria-pressed="false"] {
+  opacity: 0.45;
+}

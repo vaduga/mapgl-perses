@@ -10,7 +10,6 @@ spec: close({
   sideBLabelField?: string
   edgeRouting?: "Splines" | "Rectilinear"
   nodeCards?: bool
-  animate?: bool
   arrow?: 0 | 1 | -1 | 2
   edgeLabels?: bool
 })

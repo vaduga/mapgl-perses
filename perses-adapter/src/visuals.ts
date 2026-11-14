@@ -42,7 +42,6 @@ export function createGraphInput(
       size: 2,
       opacity: 1,
       arrow: bindings.arrow ?? 1,
-      animate: bindings.animate ?? false,
       textConfig: { fontSize: 10 },
     },
     isFixed: true,

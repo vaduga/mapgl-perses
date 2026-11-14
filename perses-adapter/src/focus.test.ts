@@ -113,6 +113,8 @@ describe("Perses neighborhood focus through public core layers", () => {
       const curve = session.renderer.layers.find((layer) =>
         layer.id.startsWith("edges-view"),
       )!;
+      expect(curve.props.animateAllEdges).toBe(false);
+      expect(curve.props.animate).toBe(false);
       const data = curve.props.data as any;
       const mappings = hops.map(
         (edge) => frame.prepared.geometry.mappings[index.getEdgeRef(edge)!]!,
@@ -133,6 +135,8 @@ describe("Perses neighborhood focus through public core layers", () => {
         const focusedCurve = session.renderer.layers.find((layer) =>
           layer.id.startsWith("edges-view"),
         )!;
+        expect(focusedCurve.props.animate).toBe(true);
+        expect(focusedCurve.props.animateAllEdges).toBe(false);
         for (const hopIndex of lineIds)
           expect(
             (focusedCurve.props as any).getHighlightDepth({
@@ -143,6 +147,7 @@ describe("Perses neighborhood focus through public core layers", () => {
         expect(session.renderer.frame).toBe(frameBeforeHover);
       }
       session.hover({ picked: false });
+      expect(session.renderer.layers.find(layer => layer.id.startsWith("edges-view"))!.props.animate).toBe(false);
       expect(session.controller.stores.pointStore.getHasFocusHighlight).toBe(
         false,
       );
@@ -174,6 +179,9 @@ describe("Perses neighborhood focus through public core layers", () => {
       )!;
       const arc = (arcLayer.props.data as any[])[mappings[0].arcId!];
       session.pick({ picked: true, object: arc });
+      const blobs = () => session.renderer.layers.find(layer => layer.id.startsWith("edges-arc-blobs"))!;
+      expect(blobs().props.animateAllEdges).toBe(false);
+      expect(blobs().props.animate).toBe(true);
       expect(session.controller.stores.pointStore.getSelectedNode?.id).toBe(
         "gateway",
       );
@@ -183,6 +191,8 @@ describe("Perses neighborhood focus through public core layers", () => {
           (arc) => arc.edgeId === "gateway-metrics",
         ),
       ).toHaveLength(1);
+      session.clearSelection();
+      expect(blobs().props.animate).toBe(false);
     } finally {
       session.dispose();
     }

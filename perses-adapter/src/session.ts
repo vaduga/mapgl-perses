@@ -122,6 +122,7 @@ export class PersesGraphSession {
             ...graphRenderOptions.presentation,
             nodeCards: options.nodeCards ?? false,
             edgeLabels: options.edgeLabels ?? false,
+            animateAllEdges: options.edgeLabels ?? false,
           },
         });
       }

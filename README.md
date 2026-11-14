@@ -149,8 +149,17 @@ After each frontend build, the Perses dev service was restarted before browser v
 
 ## Layout and edge presentation settings
 
-The Graph editor includes **Edge routing**, **Node cards**, **Arrow**, **Animate**, and **Edge labels always on**. Cards and animation default off. Perses uses MSAGL only; ELK support and an engine selector are deferred. Cards use matching dimensions in layout and drawing.
+The Graph editor includes **Edge routing**, **Node cards**, **Arrow**, and **Edge labels and animation always on**. Cards and always-on presentation default off. Perses uses MSAGL only; ELK support and an engine selector are deferred. Cards use matching dimensions in layout and drawing.
 
 Optional **Middle edge label field**, **Side A label field (source)** and **Side B label field (target)** bind literal top-level JSON properties. String and finite numeric label values are displayed; missing values produce no text. Focused edges reveal their configured labels even with always-on disabled. The core Label, edge and group visibility controls still apply.
 
-Animate follows the selected arrow: Forward source-to-target, Reverse target-to-source, Both outward from the whole rendered curve's midpoint, None static. These controls apply to this panel's current single graph layer. Display changes retain canonical picking, selection and the camera; no Grafana or private implementation is required.
+Focused edges animate by default. Always-on presentation animates all eligible edges while there is no focus, and focusing narrows animation to the focused edges. Animation follows the selected arrow: Forward source-to-target, Reverse target-to-source, Both outward from the whole rendered curve's midpoint, None static. These controls apply to this panel's current single graph layer. Display changes retain canonical picking, selection and the camera; no Grafana or private implementation is required.
+
+Node legend buttons independently toggle groups. Clearing the last selected group restores all groups and their selected appearance. Shared core rendering batches nodes by data layer and checks both endpoints for edge visibility without rebuilding layout.
+
+
+## Shared rendering smoke verification (2026-11-14)
+
+The current core source checkout passes all 56 Perses adapter tests, TypeScript, the public source boundary and the federation build. Browser verification on the restarted development stack covers the ten-node/twelve-edge demo, independent node/label visibility, shared edge visibility, routed/arc switching, legend reset and canonical selection with neighborhood focus.
+
+The separate Animate setting has been removed from the editor, schema and adapter style inputs. Focused edges animate by default in their configured arrow direction. **Edge labels and animation always on** enables idle animation for eligible edges; active focus narrows animation to focused edges. Regression assertions cover routed curves and arcs starting animation on focus and stopping it when focus clears.

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createGroupLegend } from "@vaduga/mapgl-core/store";
 import { useRenderFrame } from "@vaduga/mapgl-core/render/react";
 import { useDelayedHover } from "@vaduga/mapgl-core/render";
 import DeckGL from "@deck.gl/react";
@@ -73,7 +74,6 @@ export function MapglComponent({
     spec.sideBLabelField,
     spec.edgeRouting,
     spec.nodeCards,
-    spec.animate,
     spec.arrow,
     spec.edgeLabels,
     queryCount,
@@ -103,6 +103,13 @@ export function MapglComponent({
     error: renderError,
   } = useRenderFrame(session?.renderer);
   useEffect(() => setHoverInfo(undefined), [frame?.input.generation]);
+  const legend = session && state
+    ? createGroupLegend(
+        session.controller.scene.render.graph,
+        session.controller.scene.render.groups,
+        session.controller.scene.visibility.getActiveGroups(),
+      ).filter((entry) => entry.data.hasNodes)
+    : [];
   const focusHover = useDelayedHover((info) => session?.hover(info));
   const status =
     session?.error ??
@@ -160,6 +167,20 @@ export function MapglComponent({
           onWheel={(event) => event.stopPropagation()}
           onClick={(event) => event.stopPropagation()}
         >
+          <div className="mapgl-perses-legend" aria-label="Node groups">
+            {legend.map((entry) => (
+              <button
+                key={entry.data.groupIdx}
+                type="button"
+                aria-pressed={!entry.disabled}
+                title="Toggle group; clearing the last selected group shows all"
+                onClick={() => session.controller.scene.toggleGroup(entry.data.groupIdx)}
+              >
+                <span style={{ color: entry.color }} aria-hidden="true">●</span>{" "}
+                {entry.label}
+              </button>
+            ))}
+          </div>
           <LayerSwitcher
             label="Graph display"
             className="mapgl-perses-switcher"

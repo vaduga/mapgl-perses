@@ -69,7 +69,7 @@ export function MapglSettingsEditor({
           <option value={2}>Both</option>
         </select>
       </label>
-      {(["nodeCards", "animate", "edgeLabels"] as const).map((key) => (
+      {(["nodeCards", "edgeLabels"] as const).map((key) => (
         <label key={key}>
           <input
             type="checkbox"
@@ -79,8 +79,7 @@ export function MapglSettingsEditor({
           {
             {
               nodeCards: "Node cards",
-              animate: "Animate",
-              edgeLabels: "Edge labels always on",
+              edgeLabels: "Edge labels and animation always on",
             }[key]
           }
         </label>

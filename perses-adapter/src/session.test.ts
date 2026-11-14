@@ -78,7 +78,6 @@ describe("core-backed Perses lifecycle", () => {
     await session.update(payload, {
       ...mappings,
       nodeCards: true,
-      animate: true,
       arrow: 2,
       edgeLabels: true,
     });
@@ -92,10 +91,12 @@ describe("core-backed Perses lifecycle", () => {
     );
     const visual = session.controller.state!.visual.state.edgeUnits[0]!;
     expect(visual.style).toMatchObject({
-      animate: true,
       arrow: 2,
       text: "link",
     });
+    const curves = session.renderer.layers.find(layer => layer.id === "edges-viewshared")!;
+    expect(curves.props.animateAllEdges).toBe(true);
+    expect(curves.props.animate).toBe(true);
     expect(visual.arcStyle.sideA.text).toBe("12");
     expect(visual.arcStyle.sideB.text).toBe("24");
     const card = session.renderer.layers.find((layer) =>
