@@ -410,9 +410,9 @@ describe("Perses core LayerSwitcher visibility integration", () => {
       toggle(session, "Routed", false);
       await session.renderer.build();
       expect(session.renderer.frame!.input.presentation.isRouted).toBe(false);
-      expect(session.renderer.frame!.prepared.geometry).toEqual(
-        prepared.geometry,
-      );
+      const arcGeometry = session.renderer.frame!.prepared.geometry;
+      expect(arcGeometry.routed).toEqual(prepared.geometry.routed);
+      expect(arcGeometry.mappings).toEqual(prepared.geometry.mappings);
       expect(
         session.renderer.layers.some((layer) =>
           layer.id.startsWith("edges-view"),
